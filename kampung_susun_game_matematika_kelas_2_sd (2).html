@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kampung Susun - Game Matematika Kelas 2 SD</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+    h1, h2, h3, .font-display {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    /* Gaya Papan Kayu / Kartu Kampung Transparan */
+    .village-board {
+      background: rgba(255, 251, 235, 0.42);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 4px solid rgba(146, 64, 14, 0.85);
+      box-shadow: 0 10px 25px rgba(69, 26, 3, 0.18), 0 6px 0 rgba(120, 53, 15, 0.85);
+    }
+
+    /* Efek Teks Terbaca Jelas di Atas Background Transparan */
+    .text-outline-light {
+      text-shadow: 0 1px 6px rgba(255, 255, 255, 0.92), 0 0 2px rgba(255, 255, 255, 0.95);
+    }
+
+    /* Pola Genteng Merah Terakota */
+    .roof-banner {
+      background: repeating-linear-gradient(
+        90deg,
+        #ef4444 0px,
+        #ef4444 26px,
+        #dc2626 26px,
+        #dc2626 52px
+      );
+      border-bottom: 4px solid #7f1d1d;
+    }
+
+    /* Animasi Ceria */
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.82); opacity: 0; }
+      70% { transform: scale(1.04); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes shakeWrong {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+    @keyframes starBounce {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.25) rotate(12deg); }
+    }
+    @keyframes cloudDrift {
+      0% { transform: translateX(-10%); }
+      50% { transform: translateX(10%); }
+      100% { transform: translateX(-10%); }
+    }
+
+    .animate-float { animation: floatSlow 3.2s ease-in-out infinite; }
+    .animate-pop { animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .animate-shake { animation: shakeWrong 0.45s ease-in-out; }
+    .animate-star { animation: starBounce 0.7s ease-in-out; }
+    .animate-cloud { animation: cloudDrift 16s ease-in-out infinite; }
+
+    /* Balok Puluhan (10 segmen kecil) - Skala Responsif untuk Layar & IFP */
+    .ten-rod {
+      width: clamp(16px, 1.3vw, 24px);
+      height: clamp(74px, 6.2vw, 108px);
+      background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+      border: 2px solid #1e40af;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 2px 0;
+      box-shadow: 2px 2px 0 #1e3a8a;
+    }
+    .ten-rod span {
+      display: block;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.55);
+      width: 100%;
+    }
+
+    /* Kubus Satuan - Skala Responsif untuk Layar & IFP */
+    .one-cube {
+      width: clamp(18px, 1.45vw, 26px);
+      height: clamp(18px, 1.45vw, 26px);
+      background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%);
+      border: 2px solid #b45309;
+      border-radius: 5px;
+      box-shadow: 2px 2px 0 #92400e;
+    }
+    .one-cube.crossed {
+      opacity: 0.35;
+      position: relative;
+    }
+    .ten-rod.crossed {
+      opacity: 0.35;
+    }
+
+    /* Efek Tombol 3D Ramah Anak */
+    .btn-3d {
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    .btn-3d:active:not(:disabled) {
+      transform: translateY(3px);
+    }
+
+    /* Kotak Input Aktif */
+    .active-ring {
+      box-shadow: 0 0 0 4px #10b981, 0 6px 14px rgba(16, 185, 129, 0.35);
+      transform: scale(1.04);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-sky-300 via-emerald-200 to-lime-200 text-slate-800 relative flex flex-col">
+
+  <!-- LATAR BELAKANG KAMPUNG CERIA (GAMBAR PENUH DARI IMGUR DENGAN FALLBACK) -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <img id="bg-village-img" src="https://i.imgur.com/qWU7hRD.png" onerror="this.onerror=null; this.src='https://i.imgur.com/qWU7hRD.jpg'; this.onerror=function(){this.style.display='none'; document.getElementById('bg-village-fallback').classList.remove('hidden');};" alt="Latar Belakang Kampung Susun" class="w-full h-full object-cover object-center brightness-105 saturate-110" />
+
+    <!-- Fallback Ilustrasi Latar Kampung jika Gambar Gagal Dimuat -->
+    <div id="bg-village-fallback" class="hidden absolute inset-0 bg-gradient-to-b from-sky-300 via-sky-200 to-emerald-200">
+      <div class="absolute top-6 right-8 w-20 h-20 rounded-full bg-yellow-300 shadow-[0_0_45px_#fde047] opacity-95 border-4 border-amber-200"></div>
+      <div class="absolute top-12 left-8 opacity-85 animate-cloud">
+        <div class="w-32 h-11 bg-white rounded-full shadow-sm"></div>
+        <div class="w-16 h-16 bg-white rounded-full -mt-11 ml-6"></div>
+      </div>
+      <svg class="absolute bottom-0 left-0 w-full h-44 sm:h-56" viewBox="0 0 1440 260" preserveAspectRatio="none">
+        <path d="M0,130 C320,40 580,190 920,100 C1180,35 1340,95 1440,80 L1440,260 L0,260 Z" fill="#4ade80" opacity="0.75"/>
+        <path d="M0,165 C380,115 760,225 1120,145 C1290,105 1390,140 1440,135 L1440,260 L0,260 Z" fill="#22c55e" opacity="0.9"/>
+        <path d="M0,205 C420,185 880,235 1440,190 L1440,260 L0,260 Z" fill="#16a34a"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- HEADER / BAR ATAS (SELARAS TEMA LOGO KAYU & GENTENG KAMPUNG, DIOPTIMALKAN UNTUK IFP) -->
+  <header class="relative z-10 max-w-7xl 2xl:max-w-[1600px] w-full mx-auto px-3 sm:px-6 xl:px-8 pt-3 pb-2 flex flex-wrap items-center justify-between gap-2.5">
+    <button onclick="goHome()" class="flex items-center gap-3 bg-amber-100 hover:bg-amber-50 px-4 py-2.5 rounded-2xl border-3 border-amber-800 shadow-md btn-3d cursor-pointer">
+      <!-- Logo Kampung Susun dari Imgur dengan Fallback SVG -->
+      <img src="https://i.imgur.com/cP85wxm.png" onerror="this.onerror=null; this.src='https://i.imgur.com/cP85wxm.jpg'; this.onerror=function(){this.style.display='none'; document.getElementById('header-logo-fallback').classList.remove('hidden');};" alt="Logo Kampung Susun" class="w-10 h-10 xl:w-12 xl:h-12 object-contain rounded-xl shrink-0" />
+      <svg id="header-logo-fallback" class="hidden w-9 h-9 xl:w-11 xl:h-11 shrink-0" viewBox="0 0 64 64">
+        <path d="M8 30 L32 10 L56 30 Z" fill="#ef4444" stroke="#7f1d1d" stroke-width="3" stroke-linejoin="round"/>
+        <rect x="14" y="28" width="36" height="26" rx="4" fill="#fde68a" stroke="#92400e" stroke-width="3"/>
+        <rect x="20" y="34" width="9" height="15" rx="2" fill="#2563eb" stroke="#1e3a8a" stroke-width="2"/>
+        <rect x="35" y="40" width="9" height="9" rx="2" fill="#f59e0b" stroke="#92400e" stroke-width="2"/>
+      </svg>
+      <div class="text-left">
+        <span class="font-display font-bold text-lg sm:text-xl xl:text-2xl text-amber-950 leading-none block">Kampung Susun</span>
+        <span class="text-xs xl:text-sm font-extrabold text-amber-800">Matematika Kelas 2 SD</span>
+      </div>
+    </button>
+
+    <!-- Navigasi Cepat Menu Utama -->
+    <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+      <!-- Penghitung Bintang Total -->
+      <div class="bg-yellow-200 border-2 border-amber-700 px-3.5 py-2 rounded-2xl shadow-sm flex items-center gap-1.5">
+        <span class="text-lg sm:text-xl xl:text-2xl">⭐</span>
+        <span id="total-stars-display" class="font-display font-bold text-base sm:text-lg xl:text-2xl text-amber-950">0</span>
+      </div>
+
+      <!-- Tombol Peta Kampung -->
+      <button id="btn-map-nav" onclick="showMapScreen()" class="hidden sm:flex items-center gap-1.5 bg-sky-500 hover:bg-sky-600 text-white font-display font-semibold px-4 py-2.5 rounded-2xl border-b-4 border-sky-800 shadow btn-3d cursor-pointer text-sm xl:text-base">
+        <span>🗺️</span>
+        <span>Peta</span>
+      </button>
+
+      <!-- Tombol Layar Penuh (Sangat Berguna di IFP Kelas) -->
+      <button id="fullscreen-toggle-btn" onclick="toggleFullscreen()" aria-label="Layar Penuh IFP" title="Mode Layar Penuh IFP" class="bg-amber-50 hover:bg-white border-2 border-amber-700 w-10 h-10 xl:w-12 xl:h-12 rounded-2xl shadow-sm flex items-center justify-center text-amber-950 btn-3d cursor-pointer">
+        <span id="fullscreen-icon" class="text-lg xl:text-xl">⛶</span>
+      </button>
+
+      <!-- Tombol Suara & Musik On/Off (Hanya Logo Ikon) -->
+      <button id="sound-toggle-btn" onclick="toggleSound()" aria-label="Suara dan Musik" title="Musik & Efek" class="bg-amber-50 hover:bg-white border-2 border-amber-700 w-10 h-10 xl:w-12 xl:h-12 rounded-2xl shadow-sm flex items-center justify-center text-amber-950 btn-3d cursor-pointer">
+        <span id="sound-icon" class="text-lg xl:text-xl">🔊</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- KONTEN UTAMA (SKALA LEBAR & NYAMAN UNTUK LAYAR IFP) -->
+  <main class="relative z-10 max-w-7xl 2xl:max-w-[1600px] w-full mx-auto px-3 sm:px-6 xl:px-8 py-2 flex-1 flex flex-col justify-center">
+
+    <!-- ==================== 1. LAYAR BERANDA (TANPA KOTAK BESAR AGAR BACKGROUND TERLIHAT PENUH) ==================== -->
+    <section id="screen-home" class="text-center animate-pop max-w-5xl xl:max-w-6xl w-full mx-auto my-2">
+      <div class="px-2 sm:px-6 py-4 xl:py-6 flex flex-col items-center">
+        <!-- LOGO GAME UTAMA -->
+        <div class="w-full max-w-sm sm:max-w-md xl:max-w-xl mx-auto mb-4 xl:mb-5 animate-float flex flex-col items-center justify-center">
+          <img id="main-game-logo-img" src="https://i.imgur.com/cP85wxm.png" onerror="this.onerror=null; this.src='https://i.imgur.com/cP85wxm.jpg'; this.onerror=function(){this.style.display='none'; document.getElementById('main-game-logo-fallback').classList.remove('hidden');};" alt="Logo Game Kampung Susun" class="w-56 sm:w-72 md:w-80 xl:w-96 h-auto max-h-48 sm:max-h-56 xl:max-h-64 object-contain rounded-3xl drop-shadow-[0_10px_18px_rgba(0,0,0,0.28)] mx-auto" />
+
+          <!-- Fallback SVG Logo Game jika Gambar Imgur Tidak Termuat -->
+          <svg id="main-game-logo-fallback" class="hidden w-full max-w-md mx-auto drop-shadow-lg" viewBox="0 0 560 220" preserveAspectRatio="xMidYMid meet">
+            <rect x="65" y="135" width="22" height="58" rx="4" fill="#2563eb" stroke="#1e3a8a" stroke-width="3"/>
+            <rect x="93" y="148" width="22" height="45" rx="4" fill="#3b82f6" stroke="#1e3a8a" stroke-width="3"/>
+            <rect x="448" y="162" width="24" height="24" rx="5" fill="#f59e0b" stroke="#92400e" stroke-width="3"/>
+            <rect x="478" y="150" width="24" height="24" rx="5" fill="#fbbf24" stroke="#92400e" stroke-width="3"/>
+            <path d="M115 74 L280 14 L445 74 Z" fill="#ef4444" stroke="#7f1d1d" stroke-width="5" stroke-linejoin="round"/>
+            <rect x="128" y="70" width="304" height="122" rx="22" fill="#d97706" stroke="#78350f" stroke-width="5"/>
+            <rect x="138" y="78" width="284" height="106" rx="16" fill="#fef3c7" stroke="#b45309" stroke-width="3"/>
+            <text x="280" y="122" text-anchor="middle" font-family="'Fredoka', sans-serif" font-weight="700" font-size="38" fill="#78350f">KAMPUNG</text>
+            <text x="280" y="168" text-anchor="middle" font-family="'Fredoka', sans-serif" font-weight="700" font-size="44" fill="#dc2626">SUSUN</text>
+          </svg>
+        </div>
+
+        <!-- Subjudul Pengantar Singkat -->
+        <p class="text-amber-950 font-extrabold text-sm sm:text-base xl:text-xl max-w-2xl mx-auto mb-5 xl:mb-6 bg-white/45 backdrop-blur-xs border-2 border-amber-600/75 px-5 py-2.5 rounded-2xl shadow-sm text-outline-light">
+          Ayo berpetualang menghitung susun ke bawah sampai 100 bersama para penjaga kampung!
+        </p>
+
+        <!-- Ilustrasi Karakter Penjaga (Sejajar & Simetris Transparan) -->
+        <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-4 xl:gap-6 max-w-4xl xl:max-w-5xl mx-auto mb-6 xl:mb-8">
+          <!-- Kartu Pak Puluh -->
+          <div class="bg-blue-50/35 backdrop-blur-xs border-3 border-blue-700/80 rounded-3xl p-4 xl:p-5 flex items-center gap-4 xl:gap-5 text-left shadow-md hover:scale-[1.01] transition">
+            <div class="w-20 h-20 sm:w-24 sm:h-24 xl:w-28 xl:h-28 rounded-2xl bg-gradient-to-b from-sky-300/65 to-blue-500/65 flex items-center justify-center shrink-0 shadow-inner border-3 border-blue-900/80 relative overflow-hidden">
+              <!-- Gambar Pak Puluh dari Imgur dengan Fallback SVG -->
+              <img src="https://i.imgur.com/AiTdtpf.png" onerror="this.onerror=null; this.src='https://i.imgur.com/AiTdtpf.jpg'; this.onerror=function(){this.style.display='none'; document.getElementById('pak-puluh-fallback').classList.remove('hidden');};" alt="Logo Pak Puluh" class="w-full h-full object-contain p-1" />
+              <svg id="pak-puluh-fallback" class="hidden w-16 h-16" viewBox="0 0 80 80">
+                <rect x="8" y="34" width="12" height="38" rx="3" fill="#1d4ed8" stroke="#1e3a8a" stroke-width="2.5"/>
+                <circle cx="42" cy="40" r="16" fill="#fed7aa" stroke="#78350f" stroke-width="3"/>
+                <path d="M18 28 L42 12 L66 28 Z" fill="#facc15" stroke="#854d0e" stroke-width="3" stroke-linejoin="round"/>
+                <circle cx="37" cy="39" r="2.2" fill="#1e293b"/>
+                <circle cx="47" cy="39" r="2.2" fill="#1e293b"/>
+                <path d="M36 46 Q42 52 48 46" stroke="#78350f" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <path d="M22 74 C22 58 62 58 62 74 Z" fill="#2563eb" stroke="#1e3a8a" stroke-width="3"/>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <span class="inline-block bg-blue-700/95 text-white text-xs xl:text-sm font-extrabold px-3 py-0.5 rounded-full mb-1 border border-blue-950 shadow-2xs">KOLOM PULUHAN</span>
+              <h2 class="font-display text-xl xl:text-2xl font-bold text-blue-950 leading-tight text-outline-light">Pak Puluh</h2>
+              <p class="text-xs sm:text-sm xl:text-base text-blue-950 font-extrabold leading-snug mt-0.5 text-outline-light">Penjaga balok puluhan yang kuat dan teliti!</p>
+            </div>
+          </div>
+
+          <!-- Kartu Bu Satuan -->
+          <div class="bg-amber-50/35 backdrop-blur-xs border-3 border-amber-700/80 rounded-3xl p-4 xl:p-5 flex items-center gap-4 xl:gap-5 text-left shadow-md hover:scale-[1.01] transition">
+            <div class="w-20 h-20 sm:w-24 sm:h-24 xl:w-28 xl:h-28 rounded-2xl bg-gradient-to-b from-amber-300/65 to-amber-500/65 flex items-center justify-center shrink-0 shadow-inner border-3 border-amber-900/80 relative overflow-hidden">
+              <!-- Gambar Bu Satuan dari Imgur dengan Fallback SVG -->
+              <img src="https://i.imgur.com/E3fo2tg.png" onerror="this.onerror=null; this.src='https://i.imgur.com/E3fo2tg.jpg'; this.onerror=function(){this.style.display='none'; document.getElementById('bu-satuan-fallback').classList.remove('hidden');};" alt="Logo Bu Satuan" class="w-full h-full object-contain p-1" />
+              <svg id="bu-satuan-fallback" class="hidden w-16 h-16" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="15" fill="#fed7aa" stroke="#78350f" stroke-width="3"/>
+                <path d="M16 28 L40 13 L64 28 Z" fill="#fde047" stroke="#854d0e" stroke-width="3" stroke-linejoin="round"/>
+                <circle cx="35" cy="39" r="2.2" fill="#1e293b"/>
+                <circle cx="45" cy="39" r="2.2" fill="#1e293b"/>
+                <path d="M35 45 Q40 50 45 45" stroke="#78350f" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <path d="M22 74 C22 58 58 58 58 74 Z" fill="#ef4444" stroke="#7f1d1d" stroke-width="3"/>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <span class="inline-block bg-amber-700/95 text-white text-xs xl:text-sm font-extrabold px-3 py-0.5 rounded-full mb-1 border border-amber-950 shadow-2xs">KOLOM SATUAN</span>
+              <h2 class="font-display text-xl xl:text-2xl font-bold text-amber-950 leading-tight text-outline-light">Bu Satuan</h2>
+              <p class="text-xs sm:text-sm xl:text-base text-amber-950 font-extrabold leading-snug mt-0.5 text-outline-light">Penjaga kubus satuan yang ramah dan cekatan!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tombol Menu Utama Beranda -->
+        <div class="w-full flex flex-col items-center justify-center mb-5 xl:mb-6">
+          <button onclick="showMapScreen()" class="w-full sm:w-auto min-w-[280px] xl:min-w-[340px] bg-green-500 hover:bg-green-600 text-white font-display text-xl sm:text-2xl xl:text-3xl font-bold px-10 xl:px-12 py-4 xl:py-5 rounded-3xl border-3 border-green-900 border-b-6 shadow-lg btn-3d cursor-pointer flex items-center justify-center gap-3">
+            <span>🚀</span>
+            <span>Mulai Bermain!</span>
+          </button>
+        </div>
+
+        <!-- Tombol Pendukung Belajar -->
+        <div class="w-full max-w-4xl xl:max-w-5xl mx-auto pt-2 xl:pt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 xl:gap-4">
+          <button onclick="openModal('modal-tujuan')" class="w-full bg-purple-100/75 hover:bg-purple-200/95 backdrop-blur-xs text-purple-950 border-2 border-purple-700 font-display font-bold px-4 py-3 xl:py-3.5 rounded-2xl text-sm xl:text-base flex items-center justify-center gap-2 btn-3d cursor-pointer shadow-md text-outline-light">
+            <span>🎯</span>
+            <span>Tujuan Belajar</span>
+          </button>
+          <button onclick="openModal('modal-materi')" class="w-full bg-amber-100/75 hover:bg-amber-200/95 backdrop-blur-xs text-amber-950 border-2 border-amber-700 font-display font-bold px-4 py-3 xl:py-3.5 rounded-2xl text-sm xl:text-base flex items-center justify-center gap-2 btn-3d cursor-pointer shadow-md text-outline-light">
+            <span>📖</span>
+            <span>Materi Belajar</span>
+          </button>
+          <button onclick="openChatModal()" class="w-full bg-sky-100/75 hover:bg-sky-200/95 backdrop-blur-xs text-sky-950 border-2 border-sky-700 font-display font-bold px-4 py-3 xl:py-3.5 rounded-2xl text-sm xl:text-base flex items-center justify-center gap-2 btn-3d cursor-pointer shadow-md text-outline-light">
+            <span>💬</span>
+            <span>Tanya Pak Puluh & Bu Satuan</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. LAYAR PETA KAMPUNG (PILIH LEVEL — SKALA IFP) ==================== -->
+    <section id="screen-map" class="hidden village-board rounded-3xl overflow-hidden animate-pop">
+      <div class="roof-banner h-4 w-full"></div>
+      <div class="p-4 sm:p-6 xl:p-7">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <h2 class="font-display text-2xl sm:text-3xl xl:text-4xl font-bold text-amber-950">🗺️ Peta Petualangan Kampung Susun</h2>
+            <p class="text-amber-900 font-bold text-sm sm:text-base xl:text-lg">Ikuti jalan setapak desa dan selesaikan misi di setiap tempat!</p>
+          </div>
+          <div class="bg-green-200 border-2 border-green-700 px-4 py-2 rounded-2xl text-green-950 font-extrabold text-sm xl:text-base self-start sm:self-auto shadow-xs">
+            Wilayah Terbuka: <span id="unlocked-count">1</span> / 5
+          </div>
+        </div>
+
+        <!-- PETA VISUAL DESA INTERAKTIF BERGAYA GAME PETUALANGAN -->
+        <div class="relative rounded-3xl border-4 border-amber-800 shadow-inner overflow-hidden mb-4 bg-gradient-to-b from-sky-300 via-emerald-200 to-lime-300 h-[360px] sm:h-[430px] md:h-[480px] xl:h-[58vh] max-h-[640px]">
+          <!-- Gambar Peta Kampung dari Imgur (PeX5Pyt) -->
+          <img id="adventure-map-img" src="https://i.imgur.com/PeX5Pyt.png" onerror="this.onerror=null; this.src='https://i.imgur.com/PeX5Pyt.jpg'; this.onerror=function(){this.style.display='none'; document.getElementById('adventure-map-fallback').classList.remove('hidden');};" alt="Peta Petualangan Kampung Susun" class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none" />
+
+          <!-- Fallback Ilustrasi Peta Desa SVG -->
+          <svg id="adventure-map-fallback" class="hidden absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 500" preserveAspectRatio="none">
+            <rect width="1000" height="190" fill="#bae6fd"/>
+            <path d="M0,185 Q240,120 480,175 T1000,155 L1000,500 L0,500 Z" fill="#bef264"/>
+            <path d="M0,235 Q310,195 620,245 T1000,220 L1000,500 L0,500 Z" fill="#86efac"/>
+            <path d="M120,390 C230,360 260,260 350,255 C450,250 470,350 560,340 C660,330 700,210 865,195" fill="none" stroke="#d97706" stroke-width="46" stroke-linecap="round"/>
+            <path d="M120,390 C230,360 260,260 350,255 C450,250 470,350 560,340 C660,330 700,210 865,195" fill="none" stroke="#fde68a" stroke-width="34" stroke-linecap="round"/>
+          </svg>
+
+          <!-- Overlay Lembut -->
+          <div class="absolute inset-0 bg-amber-950/10 pointer-events-none"></div>
+
+          <!-- POS WILAYAH LEVEL INTERAKTIF (Diisi oleh JS) -->
+          <div id="levels-grid" class="relative z-10 w-full h-full">
+            <!-- Diisi otomatis via renderMap() -->
+          </div>
+        </div>
+
+        <!-- Legenda & Tombol Reset -->
+        <div class="flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm xl:text-base text-amber-950 font-bold bg-amber-100/80 border-2 border-amber-400 rounded-2xl px-4 py-2.5">
+          <div class="flex flex-wrap items-center gap-4">
+            <span class="flex items-center gap-1">🔓 <strong>Terbuka</strong></span>
+            <span class="flex items-center gap-1">🔒 <strong>Terkunci</strong> (Kumpulkan min. 3 ⭐)</span>
+            <span class="flex items-center gap-1">👆 <strong>Ketuk bangunan desa</strong> untuk mulai misi!</span>
+          </div>
+          <button onclick="resetProgressModal()" class="text-xs xl:text-sm text-amber-800 hover:text-rose-600 underline cursor-pointer font-extrabold">
+            Ulangi dari Awal
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. LAYAR PERMAINAN (SOAL SUSUN — DIOPTIMALKAN UNTUK IFP) ==================== -->
+    <section id="screen-game" class="hidden animate-pop">
+      <!-- Bar Atas Level & Progres Soal -->
+      <div class="village-board rounded-3xl px-4 xl:px-6 py-3 mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-3">
+          <button onclick="showMapScreen()" class="bg-amber-200 hover:bg-amber-300 border-2 border-amber-700 px-3.5 py-2 rounded-xl font-extrabold text-amber-950 text-sm xl:text-base btn-3d cursor-pointer">
+            ← Peta
+          </button>
+          <div>
+            <span id="game-level-badge" class="text-xs xl:text-sm font-extrabold uppercase tracking-wider text-white bg-red-600 px-2.5 py-0.5 rounded-full">Level 1</span>
+            <h2 id="game-level-title" class="font-display font-bold text-base sm:text-lg xl:text-2xl text-amber-950 leading-tight">Penjumlahan Tanpa Menyimpan</h2>
+          </div>
+        </div>
+
+        <!-- Indikator 5 Soal -->
+        <div class="flex items-center gap-2" id="question-dots">
+          <!-- Diisi via JS -->
+        </div>
+      </div>
+
+      <!-- KARTU CERITA MISI KAMPUNG -->
+      <div id="story-card" class="bg-amber-100/95 border-3 border-amber-700 rounded-3xl p-4 xl:p-5 mb-3 shadow-md flex items-center gap-4">
+        <div id="story-emoji" class="text-4xl sm:text-5xl xl:text-6xl bg-white w-16 h-16 sm:w-20 sm:h-20 xl:w-24 xl:h-24 rounded-2xl border-3 border-amber-600 flex items-center justify-center shrink-0 shadow-sm">
+          🌾
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <span id="story-location" class="text-xs xl:text-sm font-extrabold bg-red-500 text-white px-3 py-0.5 rounded-full">Sawah Pak Tani</span>
+            <span id="story-number-label" class="text-xs xl:text-sm font-extrabold text-amber-900">Soal 1 dari 5</span>
+          </div>
+          <p id="story-text" class="text-base sm:text-lg xl:text-2xl font-extrabold text-amber-950 leading-snug">
+            Memuat cerita misi...
+          </p>
+        </div>
+      </div>
+
+      <!-- AREA UTAMA: PAPAN SUSUN + BALOK VISUAL + KEYPAD -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 xl:gap-5 items-stretch">
+
+        <!-- KOLOM KIRI (7 kolom di desktop/IFP): PAPAN HITUNG BERSUSUN -->
+        <div class="lg:col-span-7 village-board rounded-3xl p-4 sm:p-5 xl:p-6 flex flex-col justify-between">
+          <!-- Header Kolom Puluhan & Satuan -->
+          <div class="grid grid-cols-12 gap-2.5 mb-3 text-center">
+            <div class="col-span-2"></div>
+            <div class="col-span-5 bg-blue-600 text-white rounded-2xl py-2.5 px-2 border-2 border-blue-900 shadow-xs">
+              <div class="text-xs xl:text-sm font-extrabold text-blue-100">👨‍🌾 Pak Puluh</div>
+              <div class="font-display text-lg sm:text-xl xl:text-2xl font-bold leading-tight">PULUHAN</div>
+            </div>
+            <div class="col-span-5 bg-amber-500 text-white rounded-2xl py-2.5 px-2 border-2 border-amber-800 shadow-xs">
+              <div class="text-xs xl:text-sm font-extrabold text-amber-100">👩‍🌾 Bu Satuan</div>
+              <div class="font-display text-lg sm:text-xl xl:text-2xl font-bold leading-tight">SATUAN</div>
+            </div>
+          </div>
+
+          <!-- Baris Kotak Simpanan / Pinjaman -->
+          <div class="grid grid-cols-12 gap-2.5 items-center mb-2 min-h-[50px] xl:min-h-[58px]">
+            <div class="col-span-2 text-right pr-1">
+              <span id="carry-label" class="hidden text-xs xl:text-sm font-extrabold bg-rose-100 text-rose-800 border border-rose-400 px-2.5 py-1 rounded-lg">Simpan</span>
+            </div>
+            <div class="col-span-5 flex justify-center">
+              <button id="box-carry-tens" onclick="selectSlot('carryTens')" class="hidden w-12 h-11 xl:w-16 xl:h-14 rounded-xl border-2 border-dashed border-rose-500 bg-rose-50 font-display text-xl xl:text-2xl font-bold text-rose-700 flex items-center justify-center cursor-pointer transition">
+                ?
+              </button>
+            </div>
+            <div class="col-span-5 flex justify-center">
+              <span id="borrow-hint-badge" class="hidden text-xs xl:text-sm font-extrabold bg-amber-200 text-amber-950 border border-amber-600 px-3 py-1 rounded-full">
+                +10 dari Pak Puluh
+              </span>
+            </div>
+          </div>
+
+          <!-- Baris Bilangan Pertama (Atas) -->
+          <div class="grid grid-cols-12 gap-2.5 items-center mb-2.5">
+            <div class="col-span-2"></div>
+            <div class="col-span-5 relative bg-blue-100/90 border-2 border-blue-400 rounded-2xl py-3 xl:py-4 flex items-center justify-center">
+              <span id="num1-tens" class="font-display text-4xl sm:text-5xl xl:text-6xl font-bold text-blue-900">2</span>
+              <span id="num1-tens-crossed" class="hidden absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span class="w-12 xl:w-16 h-1.5 bg-rose-600 rotate-[-25deg] rounded-full"></span>
+              </span>
+            </div>
+            <div class="col-span-5 relative bg-amber-100/90 border-2 border-amber-400 rounded-2xl py-3 xl:py-4 flex items-center justify-center">
+              <span id="num1-ones" class="font-display text-4xl sm:text-5xl xl:text-6xl font-bold text-amber-900">4</span>
+              <span id="num1-ones-helper" class="hidden absolute -top-2.5 -right-2 bg-rose-600 text-white text-xs xl:text-sm font-extrabold px-2.5 py-0.5 rounded-full shadow">
+                14
+              </span>
+            </div>
+          </div>
+
+          <!-- Baris Bilangan Kedua (Bawah) & Tanda Operasi -->
+          <div class="grid grid-cols-12 gap-2.5 items-center mb-3.5">
+            <div class="col-span-2 flex justify-center">
+              <div id="operator-symbol" class="w-11 h-11 sm:w-12 sm:h-12 xl:w-14 xl:h-14 rounded-2xl bg-emerald-500 text-white font-display text-3xl sm:text-4xl xl:text-5xl font-bold flex items-center justify-center shadow">
+                +
+              </div>
+            </div>
+            <div class="col-span-5 bg-blue-100/90 border-2 border-blue-400 rounded-2xl py-3 xl:py-4 flex items-center justify-center">
+              <span id="num2-tens" class="font-display text-4xl sm:text-5xl xl:text-6xl font-bold text-blue-900">1</span>
+            </div>
+            <div class="col-span-5 bg-amber-100/90 border-2 border-amber-400 rounded-2xl py-3 xl:py-4 flex items-center justify-center">
+              <span id="num2-ones" class="font-display text-4xl sm:text-5xl xl:text-6xl font-bold text-amber-900">3</span>
+            </div>
+          </div>
+
+          <!-- Garis Pembatas Hitung Bersusun -->
+          <div class="border-b-4 border-amber-900 rounded-full mb-3.5"></div>
+
+          <!-- Baris Kotak Jawaban -->
+          <div class="grid grid-cols-12 gap-2.5 items-start">
+            <div class="col-span-2 flex items-center justify-center pt-5 xl:pt-7">
+              <span class="font-display text-2xl sm:text-3xl xl:text-4xl font-bold text-amber-950">=</span>
+            </div>
+            <!-- Kotak Jawaban Puluhan -->
+            <div class="col-span-5 flex flex-col items-center">
+              <button id="box-ans-tens" onclick="selectSlot('ansTens')" class="w-full py-3 xl:py-4 rounded-2xl border-4 border-blue-400 bg-blue-50/75 font-display text-4xl sm:text-5xl xl:text-6xl font-bold text-blue-900 flex items-center justify-center transition cursor-pointer min-h-[72px] xl:min-h-[92px]">
+                <span id="val-ans-tens" class="text-blue-300">?</span>
+              </button>
+              <span class="text-xs xl:text-sm font-bold text-blue-700 mt-1.5">2. Lalu Puluhan</span>
+            </div>
+            <!-- Kotak Jawaban Satuan -->
+            <div class="col-span-5 flex flex-col items-center">
+              <button id="box-ans-ones" onclick="selectSlot('ansOnes')" class="w-full py-3 xl:py-4 rounded-2xl border-4 border-amber-400 bg-amber-50/75 font-display text-4xl sm:text-5xl xl:text-6xl font-bold text-amber-900 flex items-center justify-center transition cursor-pointer min-h-[72px] xl:min-h-[92px] active-ring">
+                <span id="val-ans-ones" class="text-amber-400">?</span>
+              </button>
+              <span class="text-xs xl:text-sm font-bold text-amber-700 mt-1.5">1. Isi Satuan Dulu</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- KOLOM KANAN (5 kolom di desktop/IFP): VISUAL BALOK & PAPAN ANGKA SENTUH -->
+        <div class="lg:col-span-5 flex flex-col gap-3.5">
+
+          <!-- GAMBAR PENDUKUNG: BALOK PULUHAN & KUBUS SATUAN -->
+          <div class="village-board rounded-3xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-display font-bold text-sm sm:text-base xl:text-lg text-amber-950">🧱 Balok Puluhan & Kubus Satuan</span>
+              <button onclick="toggleVisualBlocks()" id="toggle-blocks-btn" class="text-xs xl:text-sm font-extrabold text-amber-950 bg-amber-200 hover:bg-amber-300 border border-amber-600 px-3 py-1 rounded-lg cursor-pointer">
+                Sembunyikan
+              </button>
+            </div>
+
+            <div id="visual-blocks-container" class="space-y-2.5">
+              <!-- Baris Balok Bilangan 1 -->
+              <div class="bg-slate-50 rounded-2xl p-2.5 border border-slate-200">
+                <div class="text-xs xl:text-sm font-extrabold text-slate-500 mb-1 flex justify-between">
+                  <span id="blocks-label-1">Bilangan Atas: 24</span>
+                  <span class="text-blue-600">1 Balok = 10</span>
+                </div>
+                <div class="flex flex-wrap items-end gap-2 min-h-[80px] xl:min-h-[96px]">
+                  <div id="blocks-1-tens" class="flex items-end gap-1.5"></div>
+                  <div class="w-px h-14 xl:h-20 bg-slate-300 mx-1"></div>
+                  <div id="blocks-1-ones" class="grid grid-cols-5 gap-1.5"></div>
+                </div>
+              </div>
+
+              <!-- Baris Balok Bilangan 2 -->
+              <div class="bg-slate-50 rounded-2xl p-2.5 border border-slate-200">
+                <div class="text-xs xl:text-sm font-extrabold text-slate-500 mb-1 flex justify-between">
+                  <span id="blocks-label-2">Bilangan Bawah: 13</span>
+                  <span id="blocks-op-note" class="text-emerald-600">Digabung (+)</span>
+                </div>
+                <div class="flex flex-wrap items-end gap-2 min-h-[80px] xl:min-h-[96px]">
+                  <div id="blocks-2-tens" class="flex items-end gap-1.5"></div>
+                  <div class="w-px h-14 xl:h-20 bg-slate-300 mx-1"></div>
+                  <div id="blocks-2-ones" class="grid grid-cols-5 gap-1.5"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PAPAN ANGKA BESAR UNTUK LAYAR SENTUH & IFP -->
+          <div class="village-board rounded-3xl p-4 flex-1 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-2.5">
+              <span id="keypad-instruction" class="text-xs sm:text-sm xl:text-base font-extrabold text-amber-950 bg-amber-200 border border-amber-600 px-3 py-1 rounded-full">
+                👉 Ketuk angka untuk kolom Satuan
+              </span>
+              <button onclick="clearCurrentSlot()" class="text-xs xl:text-sm font-extrabold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg cursor-pointer">
+                Hapus
+              </button>
+            </div>
+
+            <!-- Grid Angka 0 - 9 -->
+            <div class="grid grid-cols-5 gap-2 xl:gap-2.5 mb-3">
+              <button onclick="pressNumber(1)" class="bg-white hover:bg-amber-100 active:bg-amber-200 border-2 border-amber-700 border-b-4 rounded-2xl py-2.5 sm:py-3 xl:py-4 font-display text-2xl sm:text-3xl xl:text-4xl font-bold text-amber-950 btn-3d cursor-pointer">1</button>
+              <button onclick="pressNumber(2)" class="bg-white hover:bg-amber-100 active:bg-amber-200 border-2 border-amber-700 border-b-4 rounded-2xl py-2.5 sm:py-3 xl:py-4 font-display text-2xl sm:text-3xl xl:text-4xl font-bold text-amber-950 btn-3d cursor-pointer">2</button>
+              <button onclick="pressNumber(3)" class="bg-white hover:bg-amber-100 active:bg-amber-200 border-2 border-amber-700 border-b-4 rounded-2xl py-2.5 sm:py-3 xl:py-4 font-display text-2xl sm:text-3xl xl:text-4xl font-bold text-amber-950 btn-3d cursor-pointer">3</button>
+              <button onclick="pressNumber(4)" class="bg-white hover:bg-amber-100 active:bg-amber-200 border-2 border-amber-700 border-b-4 rounded-2xl py-2.5 sm:py-3 xl:py-4 font-display text-2xl sm:text-3xl xl:text-4xl font-bold text-amber-950 btn-3d cursor-pointer">4</button>
+              <button onclick="pressNumber(5)" class="bg-white hover:bg-amber-100 active:bg-amber-200 border-2 border-amber-700 border-b-4 rounded-2xl py-2.5 sm:py-3 xl:py-4 font-display text-2xl sm:text-3xl xl:text-4xl font-bold text-amber-950 btn-3d cursor-pointer">5</button>
+              <button onclick="pressNumber(6)" class="bg-white hover:bg-amber-100 active:bg-amber-200 border-2 border-amber-700 border-b-4 rounded-2xl py-2.5 sm:py-3 xl:py-4 font-display text-2xl sm:text-3xl xl:text-4xl font-bold text-amber-950 btn-3d cursor-pointer">6</button>
+              <button onclick="pressNumber(7)" class="bg-white hover:bg-amber-100 active:bg-amber-200 border-2 border-amber-700 border-b-4 rounded-2xl py-2.5 sm:py-3 xl:py-4 font-display text-2xl sm:text-3xl xl:text-4xl font-bold text-amber-950 btn-3d cursor-pointer">7</button>
+              <button onclick="pressNumber(8)" class="bg-white hover:bg-amber-100 active:bg-amber-200 border-2 border-amber-700 border-b-4 rounded-2xl py-2.5 sm:py-3 xl:py-4 font-display text-2xl sm:text-3xl xl:text-4xl font-bold text-amber-950 btn-3d cursor-pointer">8</button>
+              <button onclick="pressNumber(9)" class="bg-white hover:bg-amber-100 active:bg-amber-200 border-2 border-amber-700 border-b-4 rounded-2xl py-2.5 sm:py-3 xl:py-4 font-display text-2xl sm:text-3xl xl:text-4xl font-bold text-amber-950 btn-3d cursor-pointer">9</button>
+              <button onclick="pressNumber(0)" class="bg-white hover:bg-amber-100 active:bg-amber-200 border-2 border-amber-700 border-b-4 rounded-2xl py-2.5 sm:py-3 xl:py-4 font-display text-2xl sm:text-3xl xl:text-4xl font-bold text-amber-950 btn-3d cursor-pointer">0</button>
+            </div>
+
+            <!-- Tombol Periksa Jawaban -->
+            <button id="btn-check-answer" onclick="checkAnswer()" class="w-full bg-green-500 hover:bg-green-600 text-white font-display text-xl sm:text-2xl xl:text-3xl font-bold py-3.5 xl:py-4 rounded-2xl border-2 border-green-900 border-b-4 shadow-md btn-3d cursor-pointer flex items-center justify-center gap-2">
+              <span>✅</span>
+              <span>Periksa Jawaban!</span>
+            </button>
+
+            <!-- Tombol Bantuan Tanya Karakter Saat Bermain -->
+            <button onclick="askCurrentQuestionToAI()" class="mt-2.5 w-full bg-sky-200 hover:bg-sky-300 text-sky-950 border-2 border-sky-700 font-display font-bold py-2.5 rounded-2xl text-xs sm:text-sm xl:text-base flex items-center justify-center gap-1.5 cursor-pointer">
+              <span>💬</span>
+              <span>Bingung? Tanya Pak Puluh & Bu Satuan!</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- KOTAK UMPAN BALIK & PETUNJUK BERTAHAP -->
+      <div id="feedback-banner" class="hidden mt-3.5 rounded-3xl p-4 xl:p-5 border-3 shadow-md flex flex-col sm:flex-row items-center justify-between gap-3 animate-pop">
+        <div class="flex items-center gap-3.5 text-left">
+          <div id="feedback-icon" class="text-4xl xl:text-5xl shrink-0">🌟</div>
+          <div>
+            <h3 id="feedback-title" class="font-display text-lg sm:text-xl xl:text-2xl font-bold">Hebat Sekali!</h3>
+            <p id="feedback-message" class="text-sm sm:text-base xl:text-lg font-bold">Jawabanmu tepat!</p>
+          </div>
+        </div>
+        <button id="btn-next-question" onclick="nextQuestion()" class="hidden w-full sm:w-auto bg-amber-400 hover:bg-amber-500 text-amber-950 font-display text-lg xl:text-xl font-bold px-7 py-3.5 rounded-2xl border-b-4 border-amber-600 shadow btn-3d cursor-pointer shrink-0">
+          Soal Berikutnya →
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== 4. LAYAR SELESAI LEVEL ==================== -->
+    <section id="screen-level-complete" class="hidden village-board rounded-3xl overflow-hidden text-center animate-pop max-w-2xl xl:max-w-3xl mx-auto">
+      <div class="roof-banner h-4 w-full"></div>
+      <div class="p-6 sm:p-8 xl:p-10">
+        <div id="complete-stars-row" class="flex justify-center gap-3 text-5xl sm:text-6xl xl:text-7xl mb-4">
+          <span>⭐</span><span>⭐</span><span>⭐</span>
+        </div>
+        <h2 id="complete-title" class="font-display text-3xl sm:text-4xl xl:text-5xl font-bold text-amber-950 mb-2">
+          Level Selesai!
+        </h2>
+        <p id="complete-subtitle" class="text-amber-900 font-bold text-base sm:text-lg xl:text-xl mb-5">
+          Kamu berhasil membantu warga kampung dengan sangat baik!
+        </p>
+        <div id="unlock-notice" class="bg-emerald-100 border-2 border-emerald-400 rounded-2xl p-4 mb-6 text-emerald-900 font-extrabold text-sm sm:text-base xl:text-lg">
+          Wilayah baru di peta kampung telah terbuka!
+        </div>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button onclick="showMapScreen()" class="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-display text-lg xl:text-xl font-bold px-8 py-3.5 rounded-2xl border-b-4 border-sky-800 shadow btn-3d cursor-pointer">
+            🗺️ Kembali ke Peta
+          </button>
+          <button onclick="retryCurrentLevel()" class="w-full sm:w-auto bg-amber-400 hover:bg-amber-500 text-amber-950 font-display text-lg xl:text-xl font-bold px-8 py-3.5 rounded-2xl border-b-4 border-amber-700 shadow btn-3d cursor-pointer">
+            🔄 Mainkan Lagi
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL KONFIRMASI RESET PROGRESS -->
+  <div id="reset-modal" class="hidden fixed inset-0 bg-slate-900/55 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl border-4 border-amber-500 max-w-md w-full p-6 text-center shadow-2xl animate-pop">
+      <div class="text-5xl mb-3">🔄</div>
+      <h3 class="font-display text-2xl font-bold text-amber-950 mb-2">Ulangi dari Awal?</h3>
+      <p class="text-slate-600 font-bold text-sm sm:text-base mb-5">Semua bintang dan wilayah peta yang terbuka akan dikembalikan ke Level 1.</p>
+      <div class="flex items-center justify-center gap-3">
+        <button onclick="closeResetModal()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-display font-bold py-3 rounded-2xl cursor-pointer">Batal</button>
+        <button onclick="confirmResetProgress()" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-display font-bold py-3 rounded-2xl border-b-4 border-rose-800 cursor-pointer">Ya, Ulangi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 1: TUJUAN BELAJAR -->
+  <div id="modal-tujuan" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-amber-50 rounded-3xl border-4 border-purple-500 max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl animate-pop overflow-hidden">
+      <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-5 py-4 flex items-center justify-between text-white">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl sm:text-3xl">🎯</span>
+          <div>
+            <h3 class="font-display text-xl sm:text-2xl font-bold leading-tight">Tujuan Belajar</h3>
+            <p class="text-xs sm:text-sm text-purple-100 font-semibold">Matematika Kelas 2 SD — Kampung Susun</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-tujuan')" class="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl font-bold text-lg cursor-pointer">✕</button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-3 text-slate-800">
+        <p class="text-sm sm:text-base font-bold text-purple-900 bg-purple-100 border border-purple-300 rounded-2xl p-3">
+          Setelah berpetualang di Kampung Susun, kamu diharapkan mampu:
+        </p>
+
+        <div class="bg-white border-2 border-blue-200 rounded-2xl p-3.5 flex items-start gap-3 shadow-xs">
+          <span class="w-8 h-8 rounded-xl bg-blue-600 text-white font-display font-bold flex items-center justify-center shrink-0">1</span>
+          <div>
+            <h4 class="font-display font-bold text-base sm:text-lg text-blue-950">Mengenal Nilai Tempat Puluhan & Satuan</h4>
+            <p class="text-xs sm:text-sm font-semibold text-slate-600">Membedakan angka puluhan (bersama Pak Puluh) dan angka satuan (bersama Bu Satuan) pada bilangan sampai 100.</p>
+          </div>
+        </div>
+
+        <div class="bg-white border-2 border-emerald-200 rounded-2xl p-3.5 flex items-start gap-3 shadow-xs">
+          <span class="w-8 h-8 rounded-xl bg-emerald-600 text-white font-display font-bold flex items-center justify-center shrink-0">2</span>
+          <div>
+            <h4 class="font-display font-bold text-base sm:text-lg text-emerald-950">Menghitung Penjumlahan Bersusun</h4>
+            <p class="text-xs sm:text-sm font-semibold text-slate-600">Menjumlahkan dua bilangan sampai 100 dengan cara susun ke bawah, baik tanpa menyimpan maupun dengan menyimpan 1 puluhan.</p>
+          </div>
+        </div>
+
+        <div class="bg-white border-2 border-amber-200 rounded-2xl p-3.5 flex items-start gap-3 shadow-xs">
+          <span class="w-8 h-8 rounded-xl bg-amber-500 text-white font-display font-bold flex items-center justify-center shrink-0">3</span>
+          <div>
+            <h4 class="font-display font-bold text-base sm:text-lg text-amber-950">Menghitung Pengurangan Bersusun</h4>
+            <p class="text-xs sm:text-sm font-semibold text-slate-600">Mengurangkan dua bilangan sampai 100 dengan cara susun ke bawah, baik tanpa meminjam maupun dengan meminjam 1 puluhan.</p>
+          </div>
+        </div>
+
+        <div class="bg-white border-2 border-rose-200 rounded-2xl p-3.5 flex items-start gap-3 shadow-xs">
+          <span class="w-8 h-8 rounded-xl bg-rose-500 text-white font-display font-bold flex items-center justify-center shrink-0">4</span>
+          <div>
+            <h4 class="font-display font-bold text-base sm:text-lg text-rose-950">Menyelesaikan Soal Cerita Sehari-hari</h4>
+            <p class="text-xs sm:text-sm font-semibold text-slate-600">Menerapkan hitungan bersusun untuk membantu kegiatan warga kampung seperti panen padi dan berbelanja di pasar.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 py-3.5 bg-white border-t border-amber-200 flex justify-end">
+        <button onclick="closeModal('modal-tujuan')" class="bg-purple-600 hover:bg-purple-700 text-white font-display font-bold px-6 py-2.5 rounded-2xl border-b-4 border-purple-900 cursor-pointer">
+          Siap Belajar! 👍
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: MATERI BELAJAR INTERAKTIF -->
+  <div id="modal-materi" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-amber-50 rounded-3xl border-4 border-amber-500 max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl animate-pop overflow-hidden">
+      <div class="bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-4 flex items-center justify-between text-white">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl sm:text-3xl">📖</span>
+          <div>
+            <h3 class="font-display text-xl sm:text-2xl font-bold leading-tight">Materi Kampung Susun</h3>
+            <p class="text-xs sm:text-sm text-amber-100 font-semibold">Yuk pelajari cara menghitung susun ke bawah!</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-materi')" class="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl font-bold text-lg cursor-pointer">✕</button>
+      </div>
+
+      <!-- Tab Pilihan Materi -->
+      <div class="px-4 pt-3 bg-amber-100/70 border-b border-amber-200 flex flex-wrap gap-2">
+        <button onclick="switchMateriTab('nilai-tempat')" id="tab-btn-nilai-tempat" class="materi-tab-btn bg-amber-500 text-white font-display font-bold px-3.5 py-2 rounded-t-xl text-xs sm:text-sm cursor-pointer">
+          1. Puluhan & Satuan
+        </button>
+        <button onclick="switchMateriTab('tambah')" id="tab-btn-tambah" class="materi-tab-btn bg-white text-amber-900 font-display font-bold px-3.5 py-2 rounded-t-xl text-xs sm:text-sm cursor-pointer">
+          2. Penjumlahan Susun
+        </button>
+        <button onclick="switchMateriTab('kurang')" id="tab-btn-kurang" class="materi-tab-btn bg-white text-amber-900 font-display font-bold px-3.5 py-2 rounded-t-xl text-xs sm:text-sm cursor-pointer">
+          3. Pengurangan Susun
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-4 text-slate-800">
+        <!-- TAB 1: NILAI TEMPAT -->
+        <div id="materi-content-nilai-tempat" class="space-y-4">
+          <div class="bg-white rounded-2xl border-2 border-amber-300 p-4">
+            <h4 class="font-display text-lg sm:text-xl font-bold text-amber-950 mb-2">Mengenal Bilangan Dua Angka</h4>
+            <p class="text-sm sm:text-base font-semibold text-slate-700 mb-3">
+              Setiap bilangan dua angka terdiri dari <span class="text-blue-700 font-extrabold">Puluhan</span> di sebelah kiri dan <span class="text-amber-700 font-extrabold">Satuan</span> di sebelah kanan.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="bg-blue-50 border-2 border-blue-300 rounded-2xl p-3 flex items-center gap-3">
+                <div class="ten-rod shrink-0"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                <div>
+                  <div class="font-display font-bold text-blue-900">1 Balok Puluhan = 10</div>
+                  <p class="text-xs sm:text-sm font-semibold text-blue-800">Dijaga oleh <strong>Pak Puluh</strong> di kolom kiri.</p>
+                </div>
+              </div>
+              <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3 flex items-center gap-3">
+                <div class="one-cube shrink-0"></div>
+                <div>
+                  <div class="font-display font-bold text-amber-900">1 Kubus Satuan = 1</div>
+                  <p class="text-xs sm:text-sm font-semibold text-amber-800">Dijaga oleh <strong>Bu Satuan</strong> di kolom kanan.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-4 text-center">
+            <p class="text-sm font-bold text-emerald-900 mb-1">Contoh Bilangan <strong>34</strong>:</p>
+            <p class="font-display text-xl sm:text-2xl font-bold text-slate-800">
+              <span class="text-blue-700">3 Puluhan (30)</span> + <span class="text-amber-600">4 Satuan (4)</span> = 34
+            </p>
+          </div>
+        </div>
+
+        <!-- TAB 2: PENJUMLAHAN SUSUN -->
+        <div id="materi-content-tambah" class="hidden space-y-4">
+          <div class="bg-white rounded-2xl border-2 border-emerald-300 p-4">
+            <h4 class="font-display text-lg font-bold text-emerald-900 mb-2">Aturan Emas Penjumlahan Susun:</h4>
+            <ol class="list-decimal list-inside space-y-1.5 text-sm sm:text-base font-bold text-slate-700">
+              <li>Selalu hitung kolom <span class="text-amber-600">Satuan (kanan)</span> terlebih dahulu!</li>
+              <li>Jika hasil satuan <strong>10 atau lebih</strong>, tulis angka satuannya di bawah, lalu <strong>simpan 1 puluhan</strong> ke atas kolom Pak Puluh.</li>
+              <li>Terakhir, jumlahkan kolom <span class="text-blue-700">Puluhan (kiri)</span> beserta angka simpanannya.</li>
+            </ol>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-3.5 text-center">
+              <span class="text-xs font-extrabold bg-sky-200 text-sky-900 px-2.5 py-0.5 rounded-full">Tanpa Menyimpan</span>
+              <div class="font-display text-2xl font-bold mt-2 text-slate-800">
+                <div>23</div>
+                <div>+ 14</div>
+                <div class="border-t-2 border-slate-700 w-20 mx-auto my-1"></div>
+                <div class="text-emerald-700">37</div>
+              </div>
+              <p class="text-xs font-bold text-slate-600 mt-1">Satuan: 3 + 4 = 7<br>Puluhan: 2 + 1 = 3</p>
+            </div>
+
+            <div class="bg-rose-50 border-2 border-rose-200 rounded-2xl p-3.5 text-center">
+              <span class="text-xs font-extrabold bg-rose-200 text-rose-900 px-2.5 py-0.5 rounded-full">Dengan Menyimpan</span>
+              <div class="font-display text-2xl font-bold mt-2 text-slate-800">
+                <div class="text-xs text-rose-600 font-extrabold">(simpan 1)</div>
+                <div>28</div>
+                <div>+ 15</div>
+                <div class="border-t-2 border-slate-700 w-20 mx-auto my-1"></div>
+                <div class="text-emerald-700">43</div>
+              </div>
+              <p class="text-xs font-bold text-slate-600 mt-1">Satuan: 8 + 5 = 13 (tulis 3, simpan 1)<br>Puluhan: 1 + 2 + 1 = 4</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: PENGURANGAN SUSUN -->
+        <div id="materi-content-kurang" class="hidden space-y-4">
+          <div class="bg-white rounded-2xl border-2 border-rose-300 p-4">
+            <h4 class="font-display text-lg font-bold text-rose-900 mb-2">Aturan Emas Pengurangan Susun:</h4>
+            <ol class="list-decimal list-inside space-y-1.5 text-sm sm:text-base font-bold text-slate-700">
+              <li>Selalu hitung kolom <span class="text-amber-600">Satuan (kanan)</span> terlebih dahulu!</li>
+              <li>Jika satuan atas <strong>lebih kecil</strong> dari satuan bawah, <strong>pinjam 1 puluhan (10)</strong> dari Pak Puluh (puluhan atas berkurang 1).</li>
+              <li>Terakhir, kurangkan kolom <span class="text-blue-700">Puluhan (kiri)</span>.</li>
+            </ol>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-3.5 text-center">
+              <span class="text-xs font-extrabold bg-sky-200 text-sky-900 px-2.5 py-0.5 rounded-full">Tanpa Meminjam</span>
+              <div class="font-display text-2xl font-bold mt-2 text-slate-800">
+                <div>47</div>
+                <div>- 23</div>
+                <div class="border-t-2 border-slate-700 w-20 mx-auto my-1"></div>
+                <div class="text-emerald-700">24</div>
+              </div>
+              <p class="text-xs font-bold text-slate-600 mt-1">Satuan: 7 - 3 = 4<br>Puluhan: 4 - 2 = 2</p>
+            </div>
+
+            <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3.5 text-center">
+              <span class="text-xs font-extrabold bg-amber-200 text-amber-950 px-2.5 py-0.5 rounded-full">Dengan Meminjam</span>
+              <div class="font-display text-2xl font-bold mt-2 text-slate-800">
+                <div class="text-xs text-rose-600 font-extrabold">(3 puluhan & 12 satuan)</div>
+                <div>42</div>
+                <div>- 16</div>
+                <div class="border-t-2 border-slate-700 w-20 mx-auto my-1"></div>
+                <div class="text-emerald-700">26</div>
+              </div>
+              <p class="text-xs font-bold text-slate-600 mt-1">Pinjam 10: 12 - 6 = 6<br>Puluhan: 3 - 1 = 2</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 py-3.5 bg-white border-t border-amber-200 flex justify-end">
+        <button onclick="closeModal('modal-materi')" class="bg-amber-500 hover:bg-amber-600 text-white font-display font-bold px-6 py-2.5 rounded-2xl border-b-4 border-amber-700 cursor-pointer">
+          Mengerti! 🌟
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: CHAT TANYA PAK PULUH & BU SATUAN -->
+  <div id="modal-chat" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-sky-50 rounded-3xl border-4 border-sky-500 max-w-xl w-full h-[85vh] max-h-[640px] flex flex-col shadow-2xl animate-pop overflow-hidden">
+      <div class="bg-gradient-to-r from-sky-600 to-blue-600 px-5 py-3.5 flex items-center justify-between text-white shrink-0">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl sm:text-3xl">💬</span>
+          <div>
+            <h3 class="font-display text-lg sm:text-xl font-bold leading-tight">Tanya Pak Puluh & Bu Satuan</h3>
+            <p class="text-xs text-sky-100 font-semibold">Teman belajar hitung susun kelas 2 SD</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-chat')" class="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl font-bold text-lg cursor-pointer">✕</button>
+      </div>
+
+      <!-- Tombol Pertanyaan Cepat -->
+      <div class="px-3.5 py-2.5 bg-sky-100/80 border-b border-sky-200 flex flex-wrap gap-1.5 shrink-0">
+        <button onclick="sendQuickPrompt('Kapan kita harus menyimpan angka saat menjumlahkan bersusun?')" class="bg-white hover:bg-sky-200 text-sky-950 border border-sky-300 text-xs font-extrabold px-2.5 py-1.5 rounded-xl cursor-pointer">
+          💡 Kapan menyimpan?
+        </button>
+        <button onclick="sendQuickPrompt('Bagaimana cara meminjam puluhan saat mengurangkan bersusun?')" class="bg-white hover:bg-sky-200 text-sky-950 border border-sky-300 text-xs font-extrabold px-2.5 py-1.5 rounded-xl cursor-pointer">
+          🔄 Cara meminjam?
+        </button>
+        <button onclick="sendQuickPrompt('Berikan 1 contoh soal penjumlahan susun mudah untuk berlatih!')" class="bg-white hover:bg-sky-200 text-sky-950 border border-sky-300 text-xs font-extrabold px-2.5 py-1.5 rounded-xl cursor-pointer">
+          ✏️ Contoh soal
+        </button>
+      </div>
+
+      <!-- Riwayat Pesan Obrolan -->
+      <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+
+      <!-- Form Kirim Pesan -->
+      <form onsubmit="handleChatSubmit(event)" class="p-3 bg-white border-t border-sky-200 flex items-center gap-2 shrink-0">
+        <input id="chat-input" type="text" placeholder="Ketik pertanyaanmu di sini..." autocomplete="off" class="flex-1 bg-slate-100 focus:bg-white border-2 border-sky-300 focus:border-sky-500 rounded-2xl px-4 py-2.5 text-sm sm:text-base font-bold text-slate-800 focus:outline-none" />
+        <button id="chat-send-btn" type="submit" class="bg-sky-500 hover:bg-sky-600 text-white font-display font-bold px-4 py-2.5 rounded-2xl border-b-4 border-sky-800 cursor-pointer shrink-0">
+          Kirim
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ==================== DATA LEVEL PETA KAMPUNG ====================
+    const LEVELS_DATA = [
+      {
+        id: 1,
+        title: "Penjumlahan Tanpa Menyimpan",
+        placeName: "Sawah Padi",
+        icon: "🌾",
+        type: "add_no_carry",
+        mapPos: "left-[14%] top-[68%]"
+      },
+      {
+        id: 2,
+        title: "Penjumlahan Dengan Menyimpan",
+        placeName: "Kebun Buah",
+        icon: "🍊",
+        type: "add_carry",
+        mapPos: "left-[32%] top-[44%]"
+      },
+      {
+        id: 3,
+        title: "Pengurangan Tanpa Meminjam",
+        placeName: "Pasar Desa",
+        icon: "🏪",
+        type: "sub_no_borrow",
+        mapPos: "left-[52%] top-[62%]"
+      },
+      {
+        id: 4,
+        title: "Pengurangan Dengan Meminjam",
+        placeName: "Kolam Ikan",
+        icon: "🐟",
+        type: "sub_borrow",
+        mapPos: "left-[70%] top-[42%]"
+      },
+      {
+        id: 5,
+        title: "Campuran Susun Kampung",
+        placeName: "Balai Kampung",
+        icon: "🏛️",
+        type: "mixed",
+        mapPos: "left-[86%] top-[26%]"
+      }
+    ];
+
+    const STORY_TEMPLATES = {
+      add: [
+        { emoji: "🌾", loc: "Sawah Padi", text: (a, b) => `Pak Tani memanen ${a} ikat padi di pagi hari dan ${b} ikat padi di sore hari. Berapa jumlah semua ikat padi Pak Tani?` },
+        { emoji: "🍊", loc: "Kebun Buah", text: (a, b) => `Bu Sari memetik ${a} buah jeruk manis. Adik memetik lagi ${b} buah jeruk. Berapa jumlah jeruk mereka sekarang?` },
+        { emoji: "🥚", loc: "Kandang Ayam", text: (a, b) => `Di keranjang ada ${a} butir telur ayam. Pagi ini ayam bertelur lagi ${b} butir. Berapa total telur semuanya?` },
+        { emoji: "🌽", loc: "Ladang Jagung", text: (a, b) => `Ayah mengumpulkan ${a} tongkol jagung dan Ibu mengumpulkan ${b} tongkol jagung. Berapa jumlah jagung seluruhnya?` },
+        { emoji: "🎈", loc: "Balai Kampung", text: (a, b) => `Warga memasang ${a} balon merah dan ${b} balon kuning untuk lomba kampung. Berapa jumlah semua balon?` }
+      ],
+      sub: [
+        { emoji: "🏪", loc: "Pasar Desa", text: (a, b) => `Bu Ani membawa ${a} bungkus kue ke pasar. Sebanyak ${b} bungkus kue sudah laku terjual. Berapa sisa kue Bu Ani?` },
+        { emoji: "🐟", loc: "Kolam Ikan", text: (a, b) => `Di kolam Pak RT ada ${a} ekor ikan mas. Sebanyak ${b} ekor ikan dipindahkan ke kolam sebelah. Berapa sisa ikan di kolam?` },
+        { emoji: "🍌", loc: "Kebun Pisang", text: (a, b) => `Kakek memanen ${a} buah pisang kepok. Lalu ${b} buah pisang dibagikan kepada tetangga. Berapa sisa pisang Kakek?` },
+        { emoji: "📚", loc: "Taman Baca", text: (a, b) => `Rak buku kampung berisi ${a} buku cerita. Sebanyak ${b} buku dipinjam anak-anak. Berapa buku yang masih ada di rak?` },
+        { emoji: "🥥", loc: "Kebun Kelapa", text: (a, b) => `Paman memetik ${a} buah kelapa muda. Sebanyak ${b} buah kelapa dibuat es kelapa segar. Berapa sisa kelapa Paman?` }
+      ]
+    };
+
+    // ==================== STATE PERMAINAN ====================
+    let gameState = {
+      soundEnabled: true,
+      unlockedLevel: 1,
+      levelStars: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+      currentLevel: 1,
+      questions: [],
+      currentQIndex: 0,
+      levelMistakes: 0,
+      questionMistakes: 0,
+      solvedCurrent: false,
+      activeSlot: 'ansOnes',
+      inputs: {
+        carryTens: '',
+        ansOnes: '',
+        ansTens: ''
+      },
+      showBlocks: true
+    };
+
+    // ==================== EFEK SUARA LEMBUT & MUSIK LATAR GAMELAN (WEB AUDIO API) ====================
+    let audioCtx = null;
+    let bgmInterval = null;
+    let bgmStep = 0;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) audioCtx = new AudioContextClass();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Sintesis Denting Instrumen Bilah Gamelan (Saron / Bonang / Gong)
+    function playGamelanStrike(freq, duration = 0.55, volume = 0.075, delay = 0, isGong = false) {
+      if (!gameState.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime + delay;
+
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(freq, now);
+        if (isGong) {
+          osc1.frequency.exponentialRampToValueAtTime(freq * 0.985, now + duration);
+        }
+
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(isGong ? freq * 2.0 : freq * 2.756, now);
+
+        const osc3 = ctx.createOscillator();
+        const gain3 = ctx.createGain();
+        osc3.type = 'sine';
+        osc3.frequency.setValueAtTime(freq * 4.02, now);
+
+        gain1.gain.setValueAtTime(0.0001, now);
+        gain1.gain.linearRampToValueAtTime(volume, now + (isGong ? 0.03 : 0.008));
+        gain1.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        gain2.gain.setValueAtTime(0.0001, now);
+        gain2.gain.linearRampToValueAtTime(volume * 0.35, now + 0.006);
+        gain2.gain.exponentialRampToValueAtTime(0.0001, now + duration * 0.55);
+
+        gain3.gain.setValueAtTime(0.0001, now);
+        gain3.gain.linearRampToValueAtTime(volume * 0.28, now + 0.003);
+        gain3.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+
+        osc1.connect(gain1);
+        osc2.connect(gain2);
+        osc3.connect(gain3);
+
+        gain1.connect(ctx.destination);
+        gain2.connect(ctx.destination);
+        gain3.connect(ctx.destination);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc3.start(now);
+
+        osc1.stop(now + duration + 0.03);
+        osc2.stop(now + duration * 0.6 + 0.03);
+        osc3.stop(now + 0.08);
+      } catch (e) {}
+    }
+
+    // Tangga Nada Slendro / Pelog Gamelan Jawa (Hz)
+    const GAMELAN_BGM_PATTERN = [
+      { f: 293.66, g: false }, { f: 0, g: false },      { f: 329.63, g: false }, { f: 392.00, g: false },
+      { f: 440.00, g: false }, { f: 392.00, g: false }, { f: 329.63, g: false }, { f: 293.66, g: true  },
+      { f: 329.63, g: false }, { f: 0, g: false },      { f: 392.00, g: false }, { f: 440.00, g: false },
+      { f: 523.25, g: false }, { f: 440.00, g: false }, { f: 392.00, g: false }, { f: 329.63, g: false },
+      { f: 440.00, g: false }, { f: 523.25, g: false }, { f: 587.33, g: false }, { f: 523.25, g: false },
+      { f: 440.00, g: false }, { f: 392.00, g: false }, { f: 329.63, g: false }, { f: 293.66, g: true  }
+    ];
+
+    function startBackgroundMusic() {
+      if (!gameState.soundEnabled || bgmInterval) return;
+      bgmInterval = setInterval(() => {
+        if (!gameState.soundEnabled) return;
+        const stepObj = GAMELAN_BGM_PATTERN[bgmStep % GAMELAN_BGM_PATTERN.length];
+        if (stepObj.f > 0 && audioCtx && audioCtx.state === 'running') {
+          playGamelanStrike(stepObj.f, 0.72, 0.026, 0, false);
+          if (stepObj.g) {
+            playGamelanStrike(stepObj.f / 2, 1.85, 0.042, 0, true);
+          }
+        }
+        bgmStep++;
+      }, 380);
+    }
+
+    function stopBackgroundMusic() {
+      if (bgmInterval) {
+        clearInterval(bgmInterval);
+        bgmInterval = null;
+      }
+    }
+
+    // Aktifkan musik latar otomatis saat siswa pertama kali menyentuh layar
+    document.addEventListener('pointerdown', () => {
+      if (gameState.soundEnabled) {
+        getAudioContext();
+        startBackgroundMusic();
+      }
+    }, { once: true });
+
+    function sfxClick() {
+      playGamelanStrike(587.33, 0.22, 0.065, 0, false);
+    }
+    function sfxSlotSelect() {
+      playGamelanStrike(523.25, 0.25, 0.055, 0, false);
+    }
+    function sfxClear() {
+      playGamelanStrike(392.00, 0.22, 0.055, 0, false);
+      playGamelanStrike(293.66, 0.28, 0.055, 0.07, false);
+    }
+    function sfxCorrect() {
+      playGamelanStrike(293.66, 0.35, 0.08, 0, false);
+      playGamelanStrike(329.63, 0.35, 0.08, 0.09, false);
+      playGamelanStrike(440.00, 0.40, 0.085, 0.18, false);
+      playGamelanStrike(587.33, 0.65, 0.095, 0.27, false);
+      playGamelanStrike(146.83, 1.40, 0.075, 0.27, true);
+    }
+    function sfxHint() {
+      playGamelanStrike(329.63, 0.35, 0.065, 0, false);
+      playGamelanStrike(293.66, 0.45, 0.065, 0.14, false);
+    }
+    function sfxLevelWin() {
+      const notes = [293.66, 329.63, 392.00, 440.00, 523.25, 587.33];
+      notes.forEach((n, idx) => playGamelanStrike(n, 0.55, 0.085, idx * 0.11, false));
+      playGamelanStrike(146.83, 2.2, 0.095, notes.length * 0.11, true);
+    }
+
+    function toggleSound() {
+      gameState.soundEnabled = !gameState.soundEnabled;
+      const icon = document.getElementById('sound-icon');
+      const btn = document.getElementById('sound-toggle-btn');
+      if (gameState.soundEnabled) {
+        icon.textContent = '🔊';
+        if (btn) btn.title = 'Musik & Efek Nyala';
+        getAudioContext();
+        startBackgroundMusic();
+        sfxClick();
+      } else {
+        icon.textContent = '🔇';
+        if (btn) btn.title = 'Musik & Efek Mati';
+        stopBackgroundMusic();
+      }
+    }
+
+    // ==================== MODE LAYAR PENUH (IFP / INTERACTIVE FLAT PANEL) ====================
+    function toggleFullscreen() {
+      sfxClick();
+      const docEl = document.documentElement;
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (docEl.requestFullscreen) {
+          docEl.requestFullscreen().catch(() => {});
+        } else if (docEl.webkitRequestFullscreen) {
+          docEl.webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      const icon = document.getElementById('fullscreen-icon');
+      if (icon) icon.textContent = document.fullscreenElement ? '🗗' : '⛶';
+    });
+
+    // ==================== PENYIMPANAN LOKAL (LOCALSTORAGE) ====================
+    function loadProgress() {
+      try {
+        const saved = localStorage.getItem('kampung_susun_progress_v1');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          gameState.unlockedLevel = parsed.unlockedLevel || 1;
+          gameState.levelStars = parsed.levelStars || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        }
+      } catch (e) {}
+      updateHeaderStars();
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem('kampung_susun_progress_v1', JSON.stringify({
+          unlockedLevel: gameState.unlockedLevel,
+          levelStars: gameState.levelStars
+        }));
+      } catch (e) {}
+      updateHeaderStars();
+    }
+
+    function updateHeaderStars() {
+      const total = Object.values(gameState.levelStars).reduce((acc, v) => acc + v, 0);
+      document.getElementById('total-stars-display').textContent = total;
+    }
+
+    // ==================== NAVIGASI LAYAR ====================
+    function hideAllScreens() {
+      ['screen-home', 'screen-map', 'screen-game', 'screen-level-complete'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+    }
+
+    function goHome() {
+      sfxClick();
+      hideAllScreens();
+      document.getElementById('screen-home').classList.remove('hidden');
+    }
+
+    function showMapScreen() {
+      sfxClick();
+      hideAllScreens();
+      renderMap();
+      document.getElementById('screen-map').classList.remove('hidden');
+    }
+
+    // ==================== RENDER PETA KAMPUNG ====================
+    function renderMap() {
+      document.getElementById('unlocked-count').textContent = gameState.unlockedLevel;
+      const grid = document.getElementById('levels-grid');
+      grid.innerHTML = '';
+
+      LEVELS_DATA.forEach(lvl => {
+        const isUnlocked = lvl.id <= gameState.unlockedLevel;
+        const stars = gameState.levelStars[lvl.id] || 0;
+
+        const nodeWrapper = document.createElement('div');
+        nodeWrapper.className = `absolute ${lvl.mapPos} -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group`;
+
+        if (isUnlocked) {
+          let starsHtml = '';
+          for (let i = 1; i <= 3; i++) {
+            starsHtml += i <= stars
+              ? '<span class="text-xs sm:text-sm xl:text-base drop-shadow-xs">⭐</span>'
+              : '<span class="text-xs sm:text-sm xl:text-base opacity-35">⭐</span>';
+          }
+
+          nodeWrapper.innerHTML = `
+            <button onclick="startLevel(${lvl.id})" class="relative flex flex-col items-center cursor-pointer btn-3d focus:outline-none">
+              <!-- Papan Nama Tempat di Atas Bangunan -->
+              <div class="mb-1.5 bg-amber-100/95 group-hover:bg-yellow-200 border-2 border-amber-800 px-2.5 sm:px-3.5 py-1 rounded-xl shadow-md transition whitespace-nowrap">
+                <div class="flex items-center justify-center gap-1">
+                  <span class="bg-red-600 text-white text-[10px] sm:text-xs xl:text-sm font-extrabold px-1.5 py-0.2 rounded-full">Lv.${lvl.id}</span>
+                  <span class="font-display font-bold text-xs sm:text-sm xl:text-base text-amber-950">${lvl.placeName}</span>
+                </div>
+                <div class="flex items-center justify-center gap-0.5 leading-none mt-0.5">${starsHtml}</div>
+              </div>
+
+              <!-- Ikon Bangunan Pos Desa -->
+              <div class="w-16 h-16 sm:w-20 sm:h-20 md:w-22 md:h-22 xl:w-26 xl:h-26 rounded-full bg-gradient-to-b from-amber-100 to-amber-300 border-4 border-amber-800 shadow-[0_6px_0_#78350f] flex items-center justify-center text-3xl sm:text-4xl xl:text-5xl group-hover:scale-110 transition">
+                ${lvl.icon}
+              </div>
+
+              <!-- Lencana Tombol Main -->
+              <span class="-mt-2.5 bg-green-500 group-hover:bg-green-600 text-white border-2 border-green-900 font-display font-bold text-[10px] sm:text-xs xl:text-sm px-3 py-0.5 rounded-full shadow">
+                Main ▶
+              </span>
+            </button>
+          `;
+        } else {
+          nodeWrapper.innerHTML = `
+            <div class="relative flex flex-col items-center opacity-80 select-none">
+              <div class="mb-1.5 bg-slate-200/90 border-2 border-slate-500 px-2.5 py-1 rounded-xl shadow-xs whitespace-nowrap">
+                <span class="font-display font-bold text-[11px] sm:text-xs xl:text-sm text-slate-700">Lv.${lvl.id} ${lvl.placeName}</span>
+              </div>
+              <div class="w-14 h-14 sm:w-16 sm:h-16 xl:w-20 xl:h-20 rounded-full bg-slate-300 border-4 border-slate-500 shadow-[0_4px_0_#475569] flex items-center justify-center text-2xl sm:text-3xl grayscale">
+                ${lvl.icon}
+              </div>
+              <span class="-mt-2 bg-slate-700 text-white font-bold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full shadow">
+                🔒 Terkunci
+              </span>
+            </div>
+          `;
+        }
+
+        grid.appendChild(nodeWrapper);
+      });
+    }
+
+    // ==================== GENERATOR SOAL ACAK (5 SOAL PER LEVEL) ====================
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generateSingleQuestion(type) {
+      let n1, n2, op, needsRegroup;
+
+      if (type === 'mixed') {
+        const subTypes = ['add_no_carry', 'add_carry', 'sub_no_borrow', 'sub_borrow'];
+        type = subTypes[randInt(0, subTypes.length - 1)];
+      }
+
+      if (type === 'add_no_carry') {
+        op = '+';
+        needsRegroup = false;
+        const o1 = randInt(1, 7);
+        const o2 = randInt(1, 9 - o1);
+        const t1 = randInt(1, 6);
+        const t2 = randInt(1, 9 - t1);
+        n1 = t1 * 10 + o1;
+        n2 = t2 * 10 + o2;
+      } else if (type === 'add_carry') {
+        op = '+';
+        needsRegroup = true;
+        const o1 = randInt(3, 9);
+        const o2 = randInt(10 - o1, 9);
+        const t1 = randInt(1, 6);
+        const t2 = randInt(1, 8 - t1);
+        n1 = t1 * 10 + o1;
+        n2 = t2 * 10 + o2;
+      } else if (type === 'sub_no_borrow') {
+        op = '-';
+        needsRegroup = false;
+        const o2 = randInt(1, 7);
+        const o1 = randInt(o2, 9);
+        const t2 = randInt(1, 7);
+        const t1 = randInt(t2 + 1, 9);
+        n1 = t1 * 10 + o1;
+        n2 = t2 * 10 + o2;
+      } else {
+        op = '-';
+        needsRegroup = true;
+        const o1 = randInt(0, 7);
+        const o2 = randInt(o1 + 1, 9);
+        const t2 = randInt(1, 7);
+        const t1 = randInt(t2 + 1, 9);
+        n1 = t1 * 10 + o1;
+        n2 = t2 * 10 + o2;
+      }
+
+      const answer = op === '+' ? n1 + n2 : n1 - n2;
+      const templates = op === '+' ? STORY_TEMPLATES.add : STORY_TEMPLATES.sub;
+      const tpl = templates[randInt(0, templates.length - 1)];
+
+      return {
+        n1,
+        n2,
+        op,
+        needsRegroup,
+        answer,
+        ansTens: Math.floor(answer / 10),
+        ansOnes: answer % 10,
+        storyEmoji: tpl.emoji,
+        storyLocation: tpl.loc,
+        storyText: tpl.text(n1, n2)
+      };
+    }
+
+    function generateLevelQuestions(levelId) {
+      const levelInfo = LEVELS_DATA.find(l => l.id === levelId);
+      const list = [];
+      const usedPairs = new Set();
+
+      while (list.length < 5) {
+        const q = generateSingleQuestion(levelInfo.type);
+        const key = `${q.n1}${q.op}${q.n2}`;
+        if (!usedPairs.has(key)) {
+          usedPairs.add(key);
+          list.push(q);
+        }
+      }
+      return list;
+    }
+
+    // ==================== MULAI & TAMPILKAN SOAL ====================
+    function startLevel(levelId) {
+      sfxClick();
+      gameState.currentLevel = levelId;
+      gameState.questions = generateLevelQuestions(levelId);
+      gameState.currentQIndex = 0;
+      gameState.levelMistakes = 0;
+
+      const levelInfo = LEVELS_DATA.find(l => l.id === levelId);
+      document.getElementById('game-level-badge').textContent = `Level ${levelId}`;
+      document.getElementById('game-level-title').textContent = levelInfo.title;
+
+      hideAllScreens();
+      document.getElementById('screen-game').classList.remove('hidden');
+      renderQuestion();
+    }
+
+    function retryCurrentLevel() {
+      startLevel(gameState.currentLevel);
+    }
+
+    function renderQuestion() {
+      const q = gameState.questions[gameState.currentQIndex];
+      gameState.questionMistakes = 0;
+      gameState.solvedCurrent = false;
+      gameState.inputs = { carryTens: '', ansOnes: '', ansTens: '' };
+      gameState.activeSlot = 'ansOnes';
+
+      const dotsContainer = document.getElementById('question-dots');
+      dotsContainer.innerHTML = '';
+      for (let i = 0; i < 5; i++) {
+        const dot = document.createElement('div');
+        if (i < gameState.currentQIndex) {
+          dot.className = 'w-7 h-7 xl:w-9 xl:h-9 rounded-full bg-green-500 text-white font-bold text-xs xl:text-sm flex items-center justify-center shadow-xs';
+          dot.textContent = '✓';
+        } else if (i === gameState.currentQIndex) {
+          dot.className = 'w-8 h-8 xl:w-10 xl:h-10 rounded-full bg-amber-400 text-amber-950 font-display font-bold text-sm xl:text-base flex items-center justify-center ring-2 ring-amber-600 shadow';
+          dot.textContent = i + 1;
+        } else {
+          dot.className = 'w-7 h-7 xl:w-9 xl:h-9 rounded-full bg-slate-200 text-slate-500 font-bold text-xs xl:text-sm flex items-center justify-center';
+          dot.textContent = i + 1;
+        }
+        dotsContainer.appendChild(dot);
+      }
+
+      document.getElementById('story-emoji').textContent = q.storyEmoji;
+      document.getElementById('story-location').textContent = q.storyLocation;
+      document.getElementById('story-number-label').textContent = `Soal ${gameState.currentQIndex + 1} dari 5`;
+      document.getElementById('story-text').textContent = q.storyText;
+
+      const t1 = Math.floor(q.n1 / 10);
+      const o1 = q.n1 % 10;
+      const t2 = Math.floor(q.n2 / 10);
+      const o2 = q.n2 % 10;
+
+      document.getElementById('num1-tens').textContent = t1;
+      document.getElementById('num1-ones').textContent = o1;
+      document.getElementById('num2-tens').textContent = t2;
+      document.getElementById('num2-ones').textContent = o2;
+
+      const opEl = document.getElementById('operator-symbol');
+      opEl.textContent = q.op;
+      opEl.className = q.op === '+'
+        ? 'w-11 h-11 sm:w-12 sm:h-12 xl:w-14 xl:h-14 rounded-2xl bg-emerald-500 text-white font-display text-3xl sm:text-4xl xl:text-5xl font-bold flex items-center justify-center shadow'
+        : 'w-11 h-11 sm:w-12 sm:h-12 xl:w-14 xl:h-14 rounded-2xl bg-rose-500 text-white font-display text-3xl sm:text-4xl xl:text-5xl font-bold flex items-center justify-center shadow';
+
+      const carryLabel = document.getElementById('carry-label');
+      const carryBox = document.getElementById('box-carry-tens');
+      const borrowBadge = document.getElementById('borrow-hint-badge');
+      const tensCrossed = document.getElementById('num1-tens-crossed');
+      const onesHelper = document.getElementById('num1-ones-helper');
+
+      tensCrossed.classList.add('hidden');
+      onesHelper.classList.add('hidden');
+
+      if (q.needsRegroup && q.op === '+') {
+        carryLabel.textContent = 'Simpan';
+        carryLabel.classList.remove('hidden');
+        carryBox.classList.remove('hidden');
+        borrowBadge.classList.add('hidden');
+      } else if (q.needsRegroup && q.op === '-') {
+        carryLabel.textContent = 'Sisa';
+        carryLabel.classList.remove('hidden');
+        carryBox.classList.remove('hidden');
+        borrowBadge.classList.remove('hidden');
+        onesHelper.textContent = `${o1 + 10}`;
+      } else {
+        carryLabel.classList.add('hidden');
+        carryBox.classList.add('hidden');
+        borrowBadge.classList.add('hidden');
+      }
+
+      renderVisualBlocks(q);
+
+      document.getElementById('feedback-banner').classList.add('hidden');
+      document.getElementById('btn-next-question').classList.add('hidden');
+      const checkBtn = document.getElementById('btn-check-answer');
+      checkBtn.disabled = false;
+      checkBtn.classList.remove('opacity-50', 'pointer-events-none');
+
+      updateSlotDisplays();
+      selectSlot('ansOnes', true);
+    }
+
+    // ==================== RENDER BALOK PULUHAN & KUBUS SATUAN ====================
+    function createTenRodElement() {
+      const rod = document.createElement('div');
+      rod.className = 'ten-rod';
+      for (let i = 0; i < 9; i++) {
+        rod.appendChild(document.createElement('span'));
+      }
+      return rod;
+    }
+
+    function createOneCubeElement() {
+      const cube = document.createElement('div');
+      cube.className = 'one-cube';
+      return cube;
+    }
+
+    function renderVisualBlocks(q) {
+      const t1 = Math.floor(q.n1 / 10);
+      const o1 = q.n1 % 10;
+      const t2 = Math.floor(q.n2 / 10);
+      const o2 = q.n2 % 10;
+
+      document.getElementById('blocks-label-1').textContent = `Bilangan Atas: ${q.n1}`;
+      document.getElementById('blocks-label-2').textContent = `Bilangan Bawah: ${q.n2}`;
+      const opNote = document.getElementById('blocks-op-note');
+      opNote.textContent = q.op === '+' ? 'Digabung (+)' : 'Diambil (-)';
+      opNote.className = q.op === '+' ? 'text-emerald-600 font-extrabold' : 'text-rose-600 font-extrabold';
+
+      const b1T = document.getElementById('blocks-1-tens');
+      const b1O = document.getElementById('blocks-1-ones');
+      const b2T = document.getElementById('blocks-2-tens');
+      const b2O = document.getElementById('blocks-2-ones');
+
+      b1T.innerHTML = '';
+      b1O.innerHTML = '';
+      b2T.innerHTML = '';
+      b2O.innerHTML = '';
+
+      for (let i = 0; i < t1; i++) b1T.appendChild(createTenRodElement());
+      for (let i = 0; i < o1; i++) b1O.appendChild(createOneCubeElement());
+      for (let i = 0; i < t2; i++) b2T.appendChild(createTenRodElement());
+      for (let i = 0; i < o2; i++) b2O.appendChild(createOneCubeElement());
+    }
+
+    function toggleVisualBlocks() {
+      sfxClick();
+      gameState.showBlocks = !gameState.showBlocks;
+      const container = document.getElementById('visual-blocks-container');
+      const btn = document.getElementById('toggle-blocks-btn');
+      if (gameState.showBlocks) {
+        container.classList.remove('hidden');
+        btn.textContent = 'Sembunyikan';
+      } else {
+        container.classList.add('hidden');
+        btn.textContent = 'Tampilkan';
+      }
+    }
+
+    // ==================== INTERAKSI INPUT KOTAK & KEYPAD ====================
+    function selectSlot(slotName, silent = false) {
+      if (gameState.solvedCurrent) return;
+      if (!silent) sfxSlotSelect();
+      gameState.activeSlot = slotName;
+
+      ['box-carry-tens', 'box-ans-ones', 'box-ans-tens'].forEach(id => {
+        document.getElementById(id).classList.remove('active-ring');
+      });
+
+      const mapId = {
+        carryTens: 'box-carry-tens',
+        ansOnes: 'box-ans-ones',
+        ansTens: 'box-ans-tens'
+      };
+      document.getElementById(mapId[slotName]).classList.add('active-ring');
+
+      const q = gameState.questions[gameState.currentQIndex];
+      const instr = document.getElementById('keypad-instruction');
+      if (slotName === 'ansOnes') {
+        instr.textContent = '👉 Ketuk angka untuk kolom Satuan (Bu Satuan)';
+      } else if (slotName === 'ansTens') {
+        instr.textContent = '👉 Ketuk angka untuk kolom Puluhan (Pak Puluh)';
+      } else if (slotName === 'carryTens') {
+        instr.textContent = q.op === '+'
+          ? '👉 Ketuk angka simpanan puluhan di atas Pak Puluh'
+          : '👉 Ketuk sisa puluhan Pak Puluh setelah dipinjam';
+      }
+    }
+
+    function updateSlotDisplays() {
+      const valOnes = document.getElementById('val-ans-ones');
+      const valTens = document.getElementById('val-ans-tens');
+      const boxCarry = document.getElementById('box-carry-tens');
+
+      if (gameState.inputs.ansOnes !== '') {
+        valOnes.textContent = gameState.inputs.ansOnes;
+        valOnes.classList.remove('text-amber-400');
+        valOnes.classList.add('text-amber-950');
+      } else {
+        valOnes.textContent = '?';
+        valOnes.classList.add('text-amber-400');
+        valOnes.classList.remove('text-amber-950');
+      }
+
+      if (gameState.inputs.ansTens !== '') {
+        valTens.textContent = gameState.inputs.ansTens;
+        valTens.classList.remove('text-blue-300');
+        valTens.classList.add('text-blue-950');
+      } else {
+        valTens.textContent = '?';
+        valTens.classList.add('text-blue-300');
+        valTens.classList.remove('text-blue-950');
+      }
+
+      boxCarry.textContent = gameState.inputs.carryTens !== '' ? gameState.inputs.carryTens : '?';
+
+      const q = gameState.questions[gameState.currentQIndex];
+      if (q && q.op === '-' && q.needsRegroup && gameState.inputs.carryTens !== '') {
+        document.getElementById('num1-tens-crossed').classList.remove('hidden');
+        document.getElementById('num1-ones-helper').classList.remove('hidden');
+      }
+    }
+
+    function pressNumber(digit) {
+      if (gameState.solvedCurrent) return;
+      sfxClick();
+      const slot = gameState.activeSlot;
+      gameState.inputs[slot] = String(digit);
+      updateSlotDisplays();
+
+      const q = gameState.questions[gameState.currentQIndex];
+      if (slot === 'ansOnes') {
+        if (q.needsRegroup && gameState.inputs.carryTens === '') {
+          selectSlot('carryTens', true);
+        } else if (gameState.inputs.ansTens === '') {
+          selectSlot('ansTens', true);
+        }
+      } else if (slot === 'carryTens') {
+        if (gameState.inputs.ansTens === '') {
+          selectSlot('ansTens', true);
+        }
+      }
+    }
+
+    function clearCurrentSlot() {
+      if (gameState.solvedCurrent) return;
+      sfxClear();
+      gameState.inputs[gameState.activeSlot] = '';
+      updateSlotDisplays();
+    }
+
+    // ==================== PEMERIKSAAN JAWABAN & PETUNJUK BERTAHAP ====================
+    function showFeedback(type, title, message) {
+      const banner = document.getElementById('feedback-banner');
+      const icon = document.getElementById('feedback-icon');
+      const titleEl = document.getElementById('feedback-title');
+      const msgEl = document.getElementById('feedback-message');
+
+      banner.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-400', 'text-emerald-950', 'bg-amber-50', 'border-amber-400', 'text-amber-950', 'animate-shake');
+
+      if (type === 'success') {
+        banner.classList.add('bg-emerald-50', 'border-emerald-400', 'text-emerald-950');
+        icon.textContent = '🌟';
+        icon.classList.add('animate-star');
+      } else {
+        banner.classList.add('bg-amber-50', 'border-amber-400', 'text-amber-950', 'animate-shake');
+        icon.textContent = '💡';
+        icon.classList.remove('animate-star');
+      }
+
+      titleEl.textContent = title;
+      msgEl.textContent = message;
+    }
+
+    function checkAnswer() {
+      if (gameState.solvedCurrent) return;
+      const q = gameState.questions[gameState.currentQIndex];
+
+      if (gameState.inputs.ansOnes === '') {
+        sfxHint();
+        selectSlot('ansOnes', true);
+        showFeedback('hint', 'Mulai dari Bu Satuan Dulu!', 'Kotak Satuan masih kosong. Yuk hitung kolom Satuan di sebelah kanan dulu!');
+        return;
+      }
+
+      if (gameState.inputs.ansTens === '') {
+        sfxHint();
+        selectSlot('ansTens', true);
+        showFeedback('hint', 'Lanjut ke Pak Puluh!', 'Bagus! Sekarang isi kotak Puluhan di sebelah kiri ya.');
+        return;
+      }
+
+      const userOnes = parseInt(gameState.inputs.ansOnes, 10);
+      const userTens = parseInt(gameState.inputs.ansTens, 10);
+      const o1 = q.n1 % 10;
+      const o2 = q.n2 % 10;
+      const t1 = Math.floor(q.n1 / 10);
+      const t2 = Math.floor(q.n2 / 10);
+
+      if (userOnes === q.ansOnes && userTens === q.ansTens) {
+        sfxCorrect();
+        gameState.solvedCurrent = true;
+        ['box-carry-tens', 'box-ans-ones', 'box-ans-tens'].forEach(id => {
+          document.getElementById(id).classList.remove('active-ring');
+        });
+
+        const praises = [
+          'Hebat sekali! Pak Puluh dan Bu Satuan bangga padamu!',
+          'Luar biasa! Hitungan susunmu tepat sekali!',
+          'Pintar! Warga kampung sangat terbantu olehmu!',
+          'Mantap! Kamu jago menghitung puluhan dan satuan!'
+        ];
+        const praiseMsg = praises[randInt(0, praises.length - 1)];
+        showFeedback('success', 'Jawaban Benar! ⭐', `${praiseMsg} (${q.n1} ${q.op} ${q.n2} = ${q.answer})`);
+
+        document.getElementById('btn-next-question').classList.remove('hidden');
+        const checkBtn = document.getElementById('btn-check-answer');
+        checkBtn.disabled = true;
+        checkBtn.classList.add('opacity-50', 'pointer-events-none');
+        return;
+      }
+
+      sfxHint();
+      gameState.questionMistakes++;
+      gameState.levelMistakes++;
+      const step = gameState.questionMistakes;
+
+      if (userOnes !== q.ansOnes) {
+        selectSlot('ansOnes', true);
+
+        if (q.op === '+' && !q.needsRegroup) {
+          if (step === 1) {
+            showFeedback('hint', 'Cek Dulu Kolom Satuan Ya!', `Lihat kolom Bu Satuan di kanan: ${o1} + ${o2} hasilnya berapa?`);
+          } else {
+            showFeedback('hint', 'Petunjuk Bu Satuan:', `Hitung jumlah kubus kuning: ${o1} kubus ditambah ${o2} kubus. Tulis hasilnya di kotak Satuan!`);
+          }
+        } else if (q.op === '+' && q.needsRegroup) {
+          if (step === 1) {
+            showFeedback('hint', 'Cek Kolom Satuan & Simpanan!', `Jumlahkan ${o1} + ${o2}. Karena hasilnya 10 atau lebih, tulis angka satuannya saja di bawah!`);
+          } else {
+            const sumO = o1 + o2;
+            showFeedback('hint', 'Petunjuk Bu Satuan:', `${o1} + ${o2} = ${sumO}. Tulis angka ${q.ansOnes} di kotak Satuan, lalu simpan 1 ke kotak kecil di atas Pak Puluh!`);
+          }
+        } else if (q.op === '-' && !q.needsRegroup) {
+          if (step === 1) {
+            showFeedback('hint', 'Cek Dulu Kolom Satuan Ya!', `Lihat kolom Bu Satuan di kanan: ${o1} dikurangi ${o2} sisa berapa?`);
+          } else {
+            showFeedback('hint', 'Petunjuk Bu Satuan:', `Ada ${o1} kubus satuan, diambil ${o2} kubus. Hitung sisanya untuk kotak Satuan!`);
+          }
+        } else {
+          document.getElementById('num1-tens-crossed').classList.remove('hidden');
+          document.getElementById('num1-ones-helper').classList.remove('hidden');
+          if (step === 1) {
+            showFeedback('hint', 'Satuan Atas Lebih Kecil!', `${o1} tidak cukup dikurangi ${o2}. Pinjam 1 puluhan (10) dari Pak Puluh sehingga menjadi ${o1 + 10}!`);
+          } else {
+            showFeedback('hint', 'Petunjuk Peminjaman:', `Sekarang hitung ${o1 + 10} - ${o2} untuk mengisi kotak Satuan di kanan!`);
+          }
+        }
+        return;
+      }
+
+      selectSlot('ansTens', true);
+      if (q.op === '+' && !q.needsRegroup) {
+        if (step === 1) {
+          showFeedback('hint', 'Satuan Sudah Benar! Cek Kolom Puluhan!', `Bagus, satuan sudah pas! Sekarang cek kolom Pak Puluh: ${t1} + ${t2} berapa?`);
+        } else {
+          showFeedback('hint', 'Petunjuk Pak Puluh:', `Hitung balok biru: ${t1} puluhan + ${t2} puluhan. Tulis hasilnya di kotak Puluhan!`);
+        }
+      } else if (q.op === '+' && q.needsRegroup) {
+        if (step === 1) {
+          showFeedback('hint', 'Jangan Lupa Angka Simpanan!', `Satuan sudah benar! Ingat tadi ada simpanan 1 puluhan di atas Pak Puluh: 1 + ${t1} + ${t2}.`);
+        } else {
+          showFeedback('hint', 'Petunjuk Pak Puluh:', `Jumlahkan semua puluhan: 1 (simpanan) + ${t1} + ${t2}. Masukkan ke kotak Puluhan!`);
+        }
+      } else if (q.op === '-' && !q.needsRegroup) {
+        if (step === 1) {
+          showFeedback('hint', 'Satuan Sudah Benar! Cek Kolom Puluhan!', `Sekarang hitung kolom Pak Puluh di kiri: ${t1} - ${t2} sisa berapa?`);
+        } else {
+          showFeedback('hint', 'Petunjuk Pak Puluh:', `Ada ${t1} balok puluhan dikurangi ${t2} balok puluhan. Tulis sisanya di kotak Puluhan!`);
+        }
+      } else {
+        document.getElementById('num1-tens-crossed').classList.remove('hidden');
+        document.getElementById('num1-ones-helper').classList.remove('hidden');
+        if (step === 1) {
+          showFeedback('hint', 'Ingat Puluhan Sudah Dipinjam 1!', `Satuan sudah benar! Karena tadi dipinjam 1 oleh Bu Satuan, ${t1} puluhan berkurang 1 menjadi ${t1 - 1}.`);
+        } else {
+          showFeedback('hint', 'Petunjuk Pak Puluh:', `Sekarang hitung ${t1 - 1} - ${t2} dan tulis hasilnya di kotak Puluhan!`);
+        }
+      }
+    }
+
+    function nextQuestion() {
+      sfxClick();
+      if (gameState.currentQIndex < 4) {
+        gameState.currentQIndex++;
+        renderQuestion();
+      } else {
+        finishLevel();
+      }
+    }
+
+    // ==================== SELESAI LEVEL & BUKA PETA ====================
+    function finishLevel() {
+      sfxLevelWin();
+      const lvl = gameState.currentLevel;
+
+      let earnedStars = 3;
+      if (gameState.levelMistakes >= 4) earnedStars = 1;
+      else if (gameState.levelMistakes >= 2) earnedStars = 2;
+
+      if (earnedStars > (gameState.levelStars[lvl] || 0)) {
+        gameState.levelStars[lvl] = earnedStars;
+      }
+
+      let newlyUnlocked = false;
+      if (lvl === gameState.unlockedLevel && lvl < 5) {
+        gameState.unlockedLevel = lvl + 1;
+        newlyUnlocked = true;
+      }
+      saveProgress();
+
+      hideAllScreens();
+      document.getElementById('screen-level-complete').classList.remove('hidden');
+
+      const starsRow = document.getElementById('complete-stars-row');
+      starsRow.innerHTML = '';
+      for (let i = 1; i <= 3; i++) {
+        const s = document.createElement('span');
+        s.textContent = '⭐';
+        s.className = i <= earnedStars ? 'animate-star inline-block' : 'opacity-25 inline-block';
+        starsRow.appendChild(s);
+      }
+
+      const levelInfo = LEVELS_DATA.find(l => l.id === lvl);
+      document.getElementById('complete-title').textContent = `${levelInfo.placeName} Selesai!`;
+      document.getElementById('complete-subtitle').textContent =
+        earnedStars === 3
+          ? 'Sempurna! Kamu meraih 3 bintang penuh tanpa banyak kesalahan!'
+          : `Hebat! Kamu meraih ${earnedStars} bintang di Level ${lvl}.`;
+
+      const notice = document.getElementById('unlock-notice');
+      if (newlyUnlocked) {
+        const nextLvl = LEVELS_DATA.find(l => l.id === lvl + 1);
+        notice.textContent = `🎉 Wilayah baru terbuka di peta: ${nextLvl.icon} ${nextLvl.placeName}!`;
+        notice.classList.remove('hidden');
+      } else if (lvl === 5) {
+        notice.textContent = '🏆 Selamat! Semua wilayah Kampung Susun telah kamu taklukkan!';
+        notice.classList.remove('hidden');
+      } else {
+        notice.textContent = '🗺️ Kamu bisa lanjut ke wilayah berikutnya atau mengulang untuk 3 bintang!';
+      }
+    }
+
+    // ==================== RESET PROGRESS ====================
+    function resetProgressModal() {
+      sfxClick();
+      document.getElementById('reset-modal').classList.remove('hidden');
+    }
+    function closeResetModal() {
+      sfxClick();
+      document.getElementById('reset-modal').classList.add('hidden');
+    }
+    function confirmResetProgress() {
+      sfxClear();
+      gameState.unlockedLevel = 1;
+      gameState.levelStars = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      saveProgress();
+      closeResetModal();
+      renderMap();
+    }
+
+    // ==================== KONTROL MODAL (TUJUAN, MATERI, CHAT AI) ====================
+    function openModal(modalId) {
+      sfxClick();
+      document.getElementById(modalId).classList.remove('hidden');
+    }
+
+    function closeModal(modalId) {
+      sfxClick();
+      document.getElementById(modalId).classList.add('hidden');
+    }
+
+    function switchMateriTab(tabKey) {
+      sfxClick();
+      ['nilai-tempat', 'tambah', 'kurang'].forEach(key => {
+        const btn = document.getElementById(`tab-btn-${key}`);
+        const content = document.getElementById(`materi-content-${key}`);
+        if (key === tabKey) {
+          btn.classList.remove('bg-white', 'text-amber-900');
+          btn.classList.add('bg-amber-500', 'text-white');
+          content.classList.remove('hidden');
+        } else {
+          btn.classList.remove('bg-amber-500', 'text-white');
+          btn.classList.add('bg-white', 'text-amber-900');
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    // ==================== FITUR CHAT AI: TANYA PAK PULUH & BU SATUAN ====================
+    let chatHistory = [];
+    let isChatLoading = false;
+
+    function openChatModal() {
+      sfxClick();
+      const container = document.getElementById('chat-messages-container');
+      if (container.children.length === 0) {
+        appendChatBubble('ai', 'Halo anak hebat! 👋 Kami <strong>Pak Puluh</strong> (penjaga puluhan) dan <strong>Bu Satuan</strong> (penjaga satuan). Ada hitungan yang ingin kamu tanyakan? Tulis saja ya!');
+      }
+      document.getElementById('modal-chat').classList.remove('hidden');
+      setTimeout(() => document.getElementById('chat-input').focus(), 150);
+    }
+
+    function askCurrentQuestionToAI() {
+      const q = gameState.questions[gameState.currentQIndex];
+      openChatModal();
+      if (q) {
+        const promptText = `Tolong jelaskan cara mengerjakan soal ini langkah demi langkah tanpa langsung memberi jawaban akhirnya: ${q.n1} ${q.op} ${q.n2}. (${q.storyText})`;
+        sendUserMessageToAI(promptText, `Bantu aku cara menghitung ${q.n1} ${q.op} ${q.n2} ya!`);
+      }
+    }
+
+    function sendQuickPrompt(text) {
+      if (isChatLoading) return;
+      sendUserMessageToAI(text, text);
+    }
+
+    function handleChatSubmit(event) {
+      event.preventDefault();
+      if (isChatLoading) return;
+      const inputEl = document.getElementById('chat-input');
+      const text = inputEl.value.trim();
+      if (!text) return;
+      inputEl.value = '';
+      sendUserMessageToAI(text, text);
+    }
+
+    function appendChatBubble(sender, htmlText) {
+      const container = document.getElementById('chat-messages-container');
+      const wrapper = document.createElement('div');
+
+      if (sender === 'user') {
+        wrapper.className = 'flex justify-end animate-pop';
+        wrapper.innerHTML = `
+          <div class="bg-emerald-500 text-white font-bold text-sm sm:text-base px-4 py-2.5 rounded-2xl rounded-br-xs max-w-[82%] shadow-xs">
+            ${escapeHtml(htmlText)}
+          </div>
+        `;
+      } else {
+        wrapper.className = 'flex items-start gap-2.5 animate-pop';
+        wrapper.innerHTML = `
+          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-amber-500 text-white flex items-center justify-center text-base shrink-0 shadow-xs border-2 border-white">
+            🌾
+          </div>
+          <div class="bg-white border-2 border-sky-200 text-slate-800 font-semibold text-sm sm:text-base px-4 py-3 rounded-2xl rounded-tl-xs max-w-[85%] shadow-xs leading-relaxed">
+            ${htmlText}
+          </div>
+        `;
+      }
+
+      container.appendChild(wrapper);
+      container.scrollTop = container.scrollHeight;
+      return wrapper;
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function formatSimpleMarkdown(text) {
+      return escapeHtml(text)
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-900">$1</strong>')
+        .replace(/\n/g, '<br>');
+    }
+
+    async function callGeminiWithBackoff(payload) {
+      const apiKey = "";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+      const delays = [1000, 2000, 4000];
+
+      for (let attempt = 0; attempt <= delays.length; attempt++) {
+        try {
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return await response.json();
+        } catch (err) {
+          if (attempt === delays.length) throw err;
+          await new Promise(res => setTimeout(res, delays[attempt]));
+        }
+      }
+    }
+
+    async function sendUserMessageToAI(actualPrompt, displayPrompt) {
+      sfxClick();
+      isChatLoading = true;
+      const sendBtn = document.getElementById('chat-send-btn');
+      sendBtn.disabled = true;
+
+      appendChatBubble('user', displayPrompt);
+      const typingBubble = appendChatBubble('ai', '<span class="text-sky-600 font-extrabold">Pak Puluh & Bu Satuan sedang berpikir... ✏️</span>');
+
+      chatHistory.push({ role: 'user', parts: [{ text: actualPrompt }] });
+      if (chatHistory.length > 8) chatHistory = chatHistory.slice(-8);
+
+      const systemPrompt = `Kamu adalah dua tokoh guru ramah dari game edukasi matematika "Kampung Susun" untuk siswa kelas 2 SD (usia 7-8 tahun):
+1. Pak Puluh (penjaga kolom puluhan / angka kiri).
+2. Bu Satuan (penjaga kolom satuan / angka kanan).
+
+Aturan wajib:
+- Gunakan bahasa Indonesia yang sangat sederhana, hangat, ceria, dan mudah dipahami anak usia 7-8 tahun.
+- Gunakan kalimat pendek (maksimal 3-4 kalimat singkat atau poin langkah mudah).
+- Jika siswa menanyakan jawaban dari sebuah soal hitungan, JANGAN langsung memberikan jawaban akhirnya; bimbing siswa menghitung kolom Satuan dulu baru kolom Puluhan.
+- Sesekali sebut nama "Pak Puluh" dan "Bu Satuan" agar terasa seperti berbicara langsung dengan karakter game.`;
+
+      const payload = {
+        contents: chatHistory,
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        }
+      };
+
+      try {
+        const result = await callGeminiWithBackoff(payload);
+        const replyText = result?.candidates?.[0]?.content?.parts?.[0]?.text
+          || 'Maaf ya, sinyal di kampung sedang kurang bagus. Coba tanyakan lagi ke Pak Puluh dan Bu Satuan sebentar lagi!';
+
+        typingBubble.remove();
+        appendChatBubble('ai', formatSimpleMarkdown(replyText));
+        chatHistory.push({ role: 'model', parts: [{ text: replyText }] });
+        sfxCorrect();
+      } catch (error) {
+        typingBubble.remove();
+        appendChatBubble('ai', 'Ups, jaringan ke balai kampung sedang terputus sebentar. Yuk coba tanya lagi atau buka menu <strong>Materi</strong> ya! 😊');
+        sfxHint();
+      } finally {
+        isChatLoading = false;
+        sendBtn.disabled = false;
+      }
+    }
+
+    // ==================== INISIALISASI ====================
+    window.addEventListener('DOMContentLoaded', () => {
+      loadProgress();
+    });
+  </script>
+</body>
+</html>
